@@ -1,0 +1,16 @@
+services:
+  # iris
+  iris:
+    init: true
+    container_name: iris
+    build:
+      context: .
+      dockerfile: iris/Dockerfile
+    ports:
+      - 52774:52773
+      - 51774:1972
+    volumes:
+    - ./iris/shared:/iris-shared
+    environment:
+    - ISC_DATA_DIRECTORY=/iris-shared/durable
+    command: --check-caps false --ISCAgent false
