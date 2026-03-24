@@ -1,4 +1,4 @@
-Class Terminology.Snomed.LoaderRf2 Extends %RegisteredObject
+Class Terminology.Snomed.Utils.LoaderRf2 Extends %RegisteredObject
 {
 
 ClassMethod LoadSnapshot(pDir As %String, pReleaseId As %String, pSystemUri As %String = "http://snomed.info/sct", pEffectiveDate As %Date = "", pSetActive As %Boolean = 1, pSuffixFile As %String = "", pClearRelease As %Boolean = 0, pPreferredTermLang As %String = "") As %Status
@@ -18,7 +18,7 @@ _stmt_cache = {}
 def log_info(msg):
     try:
         iris.cls("Ens.Util.Log").LogInfo(
-            "Terminology.Snomed.LoaderRf2",
+            "Terminology.Snomed.Utils.LoaderRf2",
             "LoadSnapshotPy",
             str(msg)
         )

@@ -48,7 +48,7 @@ Method OnRequest(pRequest As Terminology.Production.Msg.SnomedRf2LoadRequest, Ou
             "Inicio importación RF2. ReleaseId="_pRequest.ReleaseId_" Path="_rf2Dir
         )
 
-        Set tSC = ##class(Terminology.Snomed.LoaderRf2).LoadSnapshot(
+        Set tSC = ##class(Terminology.Snomed.Utils.LoaderRf2).LoadSnapshot(
             rf2Dir,
             pRequest.ReleaseId,
             pRequest.SystemUri,
@@ -82,7 +82,7 @@ Method OnRequest(pRequest As Terminology.Production.Msg.SnomedRf2LoadRequest, Ou
                 "Inicio BuilderPreferredTerm. ReleaseId="_pRequest.ReleaseId_" Lang="_..PreferredTermLang_" Dialect="_..PreferredTermDialect_" LanguageRefsetId="_..PreferredTermLanguageRefsetId
             )
 
-            Set tSC = ##class(Terminology.Snomed.BuilderPreferredTerm).Build(
+            Set tSC = ##class(Terminology.Snomed.Utils.BuilderPreferredTerm).Build(
                 pRequest.ReleaseId,
                 ..PreferredTermLang,
                 ..PreferredTermDialect,
@@ -108,7 +108,7 @@ Method OnRequest(pRequest As Terminology.Production.Msg.SnomedRf2LoadRequest, Ou
                 "Inicio BuilderIsaClosure. ReleaseId="_pRequest.ReleaseId_" View="_..IsaClosureView_" IsaTypeId="_..IsaTypeId
             )
 
-            Set tSC = ##class(Terminology.Snomed.BuilderIsaClosure).Build(
+            Set tSC = ##class(Terminology.Snomed.Utils.BuilderIsaClosure).Build(
                 pRequest.ReleaseId,
                 ..IsaClosureView,
                 ..IsaTypeId
