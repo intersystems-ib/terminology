@@ -119,7 +119,7 @@ ClassMethod PopulateStage(pReleaseId As %String, pLang As %String, pDialect As %
     Set stmt = ##class(%SQL.Statement).%New()
 
     Set sql = ""
-    Set sql = sql_"INSERT INTO Terminology_Snomed.PreferredTermStage "
+    Set sql = sql_"INSERT %NOLOCK INTO Terminology_Snomed.PreferredTermStage "
     Set sql = sql_"(ReleaseId, Lang, Dialect, ConceptId, DescriptionId, Term, TermNorm) "
     Set sql = sql_"SELECT "
     Set sql = sql_"?, ?, ?, d.ConceptId, d.DescriptionId, d.Term, %SQLUPPER(d.Term) "
