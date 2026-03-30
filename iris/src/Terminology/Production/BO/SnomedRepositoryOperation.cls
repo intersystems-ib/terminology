@@ -47,71 +47,22 @@ Method OnMessage(pRequest As Ens.Request, Output pResponse As Ens.Response) As %
 
 Method HandleSearch(pRequest As Terminology.Production.Msg.SnomedSearchRequest, Output pResponse As Terminology.Production.Msg.SnomedSearchResponse) As %Status
 {
-    Set tSC = $$$OK
     Set pResponse = ##class(Terminology.Production.Msg.SnomedSearchResponse).%New()
 
     Try {
-        Set whereList = ""
-        Set stmt = ##class(%SQL.Statement).%New()
-        Set query = ""
-        Set sql = "SELECT %ID, ConceptId, Term "_
-                  "FROM Terminology_Snomed.PreferredTerm "                
-        Set endSQL = "ORDER BY Term"
-        
-        if (pRequest.ReleaseId '= "") {
-            Set whereList = whereList_$ListBuild("ReleaseId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ReleaseId
-        }
-        if (pRequest.Lang '= "") {
-            Set whereList = whereList_$ListBuild("Lang = ?")
-            Set tArgs($i(tArgs)) = pRequest.Lang
-        }
-        if (pRequest.Dialect '= "") {
-            Set whereList = whereList_$ListBuild("Dialect = ?")
-            Set tArgs($i(tArgs)) = pRequest.Dialect
-        }
-        if (pRequest.Query '= "") {
-            Set termNorm = ..NormalizeTerm(pRequest.Query)
-            Set whereList = whereList_$ListBuild("%ID %FIND search_index(IXTermNormFind, ?)")
-            Set tArgs($i(tArgs)) = termNorm
-        }
-        if (whereList '= "") {
-            set query = sql_"WHERE "_$LISTTOSTRING(whereList," AND ")_" "_endSQL
-        } 
-        else {
-            set query = sql_" "_endSQL
-        }
+        Set tSC = ..GetRepository().SearchConcepts(
+            pRequest.ReleaseId,
+            pRequest.Lang,
+            pRequest.Dialect,
+            pRequest.Query,
+            pRequest.Limit,
+            pRequest.Offset,
+            .payload
+        )
+        $$$ThrowOnError(tSC)
 
-        set statement = ##class(%SQL.Statement).%New()
-                    $$$ThrowOnError(statement.%Prepare(query))
-        set rset = statement.%Execute(tArgs...)
-
-        Set payload = ##class(Terminology.Snomed.DTO.SearchResult).%New()
-        Set skipped = 0
-        Set added = 0
-        Set limit = $Select(pRequest.Limit>0:pRequest.Limit,1:20)
-        Set offset = $Select(pRequest.Offset>0:pRequest.Offset,1:0)
-
-        While rset.%Next() {
-            If skipped < offset {
-                Set skipped = skipped + 1
-                Continue
-            }
-
-            If added >= limit {
-                Continue
-            }
-
-            Set item = ##class(Terminology.Snomed.DTO.ConceptSummary).%New()
-            Set item.ConceptId = rset.%Get("ConceptId")
-            Set item.PreferredTerm = rset.%Get("Term")
-            Do payload.Items.Insert(item)
-            Set added = added + 1
-        }
-
-        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
-        Return $$$OK
+        Return tSC
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
@@ -119,73 +70,20 @@ Method HandleSearch(pRequest As Terminology.Production.Msg.SnomedSearchRequest, 
 
 Method HandleGetConcept(pRequest As Terminology.Production.Msg.SnomedGetConceptRequest, Output pResponse As Terminology.Production.Msg.SnomedGetConceptResponse) As %Status
 {
-    Set tSC = $$$OK
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetConceptResponse).%New()
 
     Try {
-        Set whereList = ""
-        Set joinList = ""
-        Set query = ""
-
-        Set sql = "SELECT c.%ID, c.ConceptId, c.Active, c.ModuleId, c.DefinitionStatusId, CONVERT(VARCHAR, c.EffectiveTime) AS EffectiveTime, pt.Term "_
-                  "FROM Terminology_Snomed.Concept c "_
-                  "LEFT JOIN Terminology_Snomed.PreferredTerm pt "_
-                  "ON pt.ConceptId = c.ConceptId "
-
-        Set endSQL = ""
-
-        If (pRequest.ReleaseId '= "") {
-            Set whereList = whereList_$ListBuild("c.ReleaseId = ?")
-
-            Set joinList = joinList_$ListBuild("pt.ReleaseId = c.ReleaseId")
-        }
-
-        If (pRequest.Lang '= "") {
-            Set joinList = joinList_$ListBuild("pt.Lang = ?")
-            Set tArgs($i(tArgs)) = pRequest.Lang
-        }
-
-        If (pRequest.Dialect '= "") {
-            Set joinList = joinList_$ListBuild("pt.Dialect = ?")
-            Set tArgs($i(tArgs)) = pRequest.Dialect
-        }
-
-        If (pRequest.ReleaseId '= "") {
-            Set tArgs($i(tArgs)) = pRequest.ReleaseId
-        }
-
-        If (pRequest.ConceptId '= "") {
-            Set whereList = whereList_$ListBuild("c.ConceptId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ConceptId
-        }
-
-        If (joinList '= "") {
-            Set sql = sql_" AND "_$ListToString(joinList," AND ")
-        }
-
-        If (whereList '= "") {
-            Set query = sql_" WHERE "_$ListToString(whereList," AND ")_" "_endSQL
-        } Else {
-            Set query = sql_" "_endSQL
-        }
-
-        Set statement = ##class(%SQL.Statement).%New()
-
-        $$$ThrowOnError(statement.%Prepare(query))
-        Set rset = statement.%Execute(tArgs...)
-
-        Set payload = ##class(Terminology.Snomed.DTO.ConceptResult).%New()
-        If rset.%Next() {
-            Set payload.ConceptId = rset.%Get("ConceptId")
-            Set payload.Active = rset.%Get("Active")
-            Set payload.ModuleId = rset.%Get("ModuleId")
-            Set payload.DefinitionStatusId = rset.%Get("DefinitionStatusId")
-            Set payload.EffectiveTime = rset.%Get("EffectiveTime")
-            Set payload.PreferredTerm = rset.%Get("Term")
-        }
+        Set tSC = ..GetRepository().GetConceptByCode(
+            pRequest.ConceptId,
+            pRequest.ReleaseId,
+            pRequest.Lang,
+            pRequest.Dialect,
+            .payload
+        )
+        $$$ThrowOnError(tSC)
 
         Set pResponse.Payload = payload
-        Return $$$OK
+        Return tSC
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
@@ -193,73 +91,21 @@ Method HandleGetConcept(pRequest As Terminology.Production.Msg.SnomedGetConceptR
 
 Method HandleGetChildren(pRequest As Terminology.Production.Msg.SnomedGetChildrenRequest, Output pResponse As Terminology.Production.Msg.SnomedGetChildrenResponse) As %Status
 {
-    Set tSC = $$$OK
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetChildrenResponse).%New()
 
     Try {
-        Set whereList = ""
-        Set joinList = ""
-        Set query = ""
+        Set tSC = ..GetRepository().GetChildren(
+            pRequest.ConceptId,
+            pRequest.ReleaseId,
+            pRequest.View,
+            pRequest.Lang,
+            pRequest.Dialect,
+            .payload
+        )
+        $$$ThrowOnError(tSC)
 
-        Set sql = "SELECT c.%ID, c.DescendantId AS ConceptId, c.Depth, pt.Term "_
-                  "FROM Terminology_Snomed.IsaClosure c "_
-                  "LEFT JOIN Terminology_Snomed.PreferredTerm pt "_
-                  "ON pt.ConceptId = c.DescendantId AND c.ReleaseId = pt.ReleaseId "
-
-        Set endSQL = "ORDER BY pt.Term"
-
-        If (pRequest.Lang '= "") {
-            Set joinList = joinList_$ListBuild("pt.Lang = ?")
-            Set tArgs($i(tArgs)) = pRequest.Lang
-        }
-
-        If (pRequest.Dialect '= "") {
-            Set joinList = joinList_$ListBuild("pt.Dialect = ?")
-            Set tArgs($i(tArgs)) = pRequest.Dialect
-        }
-
-        If (pRequest.ReleaseId '= "") {
-            Set whereList = whereList_$ListBuild("c.ReleaseId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ReleaseId
-        }
-
-        If (pRequest.View '= "") {
-            Set whereList = whereList_$ListBuild("c.View = ?")
-            Set tArgs($i(tArgs)) = pRequest.View
-        }
-
-        If (pRequest.ConceptId '= "") {
-            Set whereList = whereList_$ListBuild("c.AncestorId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ConceptId
-        }
-
-        Set whereList = whereList_$ListBuild("c.Depth = 1")        
-
-        If (joinList '= "") {
-            Set sql = sql_" AND "_$ListToString(joinList," AND ")
-        }
-
-        If (whereList '= "") {
-            Set query = sql_" WHERE "_$ListToString(whereList," AND ")_" "_endSQL
-        } Else {
-            Set query = sql_" "_endSQL
-        }
-        Set statement = ##class(%SQL.Statement).%New()
-        $$$ThrowOnError(statement.%Prepare(query))
-        Set rset = statement.%Execute(tArgs...)
-
-        Set payload = ##class(Terminology.Snomed.DTO.ConceptListResult).%New()
-        While rset.%Next() {
-            Set item = ##class(Terminology.Snomed.DTO.ConceptSummary).%New()
-            Set item.ConceptId = rset.%Get("ConceptId")
-            Set item.Depth = rset.%Get("Depth")
-            Set item.PreferredTerm = rset.%Get("Term")
-            Do payload.Items.Insert(item)
-        }
-
-        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
-        Return $$$OK
+        Return tSC
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
@@ -267,87 +113,23 @@ Method HandleGetChildren(pRequest As Terminology.Production.Msg.SnomedGetChildre
 
 Method HandleGetDescendants(pRequest As Terminology.Production.Msg.SnomedGetDescendantsRequest, Output pResponse As Terminology.Production.Msg.SnomedGetDescendantsResponse) As %Status
 {
-    Set tSC = $$$OK
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetDescendantsResponse).%New()
 
     Try {
-        Set whereList = ""
-        Set joinList = ""
-        Set query = ""
+        Set tSC = ..GetRepository().GetDescendants(
+            pRequest.ConceptId,
+            pRequest.ReleaseId,
+            pRequest.View,
+            pRequest.Lang,
+            pRequest.Dialect,
+            pRequest.Limit,
+            pRequest.Offset,
+            .payload
+        )
+        $$$ThrowOnError(tSC)
 
-        Set sql = "SELECT c.%ID, c.DescendantId AS ConceptId, c.Depth, pt.Term "_
-                  "FROM Terminology_Snomed.IsaClosure c "_
-                  "LEFT JOIN Terminology_Snomed.PreferredTerm pt "_
-                  "ON pt.ConceptId = c.DescendantId AND c.ReleaseId = pt.ReleaseId "
-
-        Set endSQL = "ORDER BY c.Depth, pt.Term"        
-
-        If (pRequest.Lang '= "") {
-            Set joinList = joinList_$ListBuild("pt.Lang = ?")
-            Set tArgs($i(tArgs)) = pRequest.Lang
-        }
-
-        If (pRequest.Dialect '= "") {
-            Set joinList = joinList_$ListBuild("pt.Dialect = ?")
-            Set tArgs($i(tArgs)) = pRequest.Dialect
-        }
-
-        If (pRequest.ReleaseId '= "") {
-            Set whereList = whereList_$ListBuild("c.ReleaseId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ReleaseId
-        }
-
-        If (pRequest.View '= "") {
-            Set whereList = whereList_$ListBuild("c.View = ?")
-            Set tArgs($i(tArgs)) = pRequest.View
-        }
-
-        If (pRequest.ConceptId '= "") {
-            Set whereList = whereList_$ListBuild("c.AncestorId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ConceptId
-        }
-
-        If (joinList '= "") {
-            Set sql = sql_" AND "_$ListToString(joinList," AND ")
-        }
-
-        If (whereList '= "") {
-            Set query = sql_" WHERE "_$ListToString(whereList," AND ")_" "_endSQL
-        } Else {
-            Set query = sql_" "_endSQL
-        }
-
-        Set statement = ##class(%SQL.Statement).%New()
-        $$$ThrowOnError(statement.%Prepare(query))
-        Set rset = statement.%Execute(tArgs...)
-
-        Set payload = ##class(Terminology.Snomed.DTO.ConceptListResult).%New()
-        Set skipped = 0
-        Set added = 0
-        Set limit = $Select(pRequest.Limit>0:pRequest.Limit,1:100)
-        Set offset = $Select(pRequest.Offset>0:pRequest.Offset,1:0)
-
-        While rset.%Next() {
-            If skipped < offset {
-                Set skipped = skipped + 1
-                Continue
-            }
-
-            If added >= limit {
-                Continue
-            }
-
-            Set item = ##class(Terminology.Snomed.DTO.ConceptSummary).%New()
-            Set item.ConceptId = rset.%Get("ConceptId")
-            Set item.Depth = rset.%Get("Depth")
-            Set item.PreferredTerm = rset.%Get("Term")
-            Do payload.Items.Insert(item)
-            Set added = added + 1
-        }
-
-        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
-        Return $$$OK
+        Return tSC
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
@@ -355,96 +137,25 @@ Method HandleGetDescendants(pRequest As Terminology.Production.Msg.SnomedGetDesc
 
 Method HandleGetAncestors(pRequest As Terminology.Production.Msg.SnomedGetAncestorsRequest, Output pResponse As Terminology.Production.Msg.SnomedGetAncestorsResponse) As %Status
 {
-    Set tSC = $$$OK
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetAncestorsResponse).%New()
 
     Try {
-        Set whereList = ""
-        Set joinList = ""
-        Set query = ""
+        Set tSC = ..GetRepository().GetAncestors(
+            pRequest.ConceptId,
+            pRequest.ReleaseId,
+            pRequest.View,
+            pRequest.Lang,
+            pRequest.Dialect,
+            pRequest.IncludeSelf,
+            pRequest.MaxDepth,
+            pRequest.Limit,
+            pRequest.Offset,
+            .payload
+        )
+        $$$ThrowOnError(tSC)
 
-        Set sql = "SELECT c.%ID, c.AncestorId AS ConceptId, c.Depth, pt.Term "_
-                  "FROM Terminology_Snomed.IsaClosure c "_
-                  "LEFT JOIN Terminology_Snomed.PreferredTerm pt "_
-                  "ON pt.ConceptId = c.AncestorId AND c.ReleaseId = pt.ReleaseId "
-
-        Set endSQL = "ORDER BY c.Depth, pt.Term"
-
-        If (pRequest.Lang '= "") {
-            Set joinList = joinList_$ListBuild("pt.Lang = ?")
-            Set tArgs($i(tArgs)) = pRequest.Lang
-        }
-
-        If (pRequest.Dialect '= "") {
-            Set joinList = joinList_$ListBuild("pt.Dialect = ?")
-            Set tArgs($i(tArgs)) = pRequest.Dialect
-        }
-
-        If (pRequest.ReleaseId '= "") {
-            Set whereList = whereList_$ListBuild("c.ReleaseId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ReleaseId
-        }
-
-        If (pRequest.View '= "") {
-            Set whereList = whereList_$ListBuild("c.View = ?")
-            Set tArgs($i(tArgs)) = pRequest.View
-        }
-
-        If (pRequest.ConceptId '= "") {
-            Set whereList = whereList_$ListBuild("c.DescendantId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ConceptId
-        }
-
-        If ('pRequest.IncludeSelf) {
-            Set whereList = whereList_$ListBuild("c.Depth > 0")
-        }
-
-        If (pRequest.MaxDepth > 0) {
-            Set whereList = whereList_$ListBuild("c.Depth <= ?")
-            Set tArgs($i(tArgs)) = pRequest.MaxDepth
-        }
-
-        If (joinList '= "") {
-            Set sql = sql_" AND "_$ListToString(joinList," AND ")
-        }
-
-        If (whereList '= "") {
-            Set query = sql_" WHERE "_$ListToString(whereList," AND ")_" "_endSQL
-        } Else {
-            Set query = sql_" "_endSQL
-        }
-
-        Set statement = ##class(%SQL.Statement).%New()
-        $$$ThrowOnError(statement.%Prepare(query))
-        Set rset = statement.%Execute(tArgs...)
-
-        Set payload = ##class(Terminology.Snomed.DTO.ConceptListResult).%New()
-        Set skipped = 0
-        Set added = 0
-        Set limit = $Select(pRequest.Limit>0:pRequest.Limit,1:100)
-        Set offset = $Select(pRequest.Offset>0:pRequest.Offset,1:0)
-
-        While rset.%Next() {
-            If skipped < offset {
-                Set skipped = skipped + 1
-                Continue
-            }
-
-            If added >= limit {
-                Continue
-            }
-
-            Set item = ##class(Terminology.Snomed.DTO.ConceptSummary).%New()
-            Set item.ConceptId = rset.%Get("ConceptId")
-            Set item.Depth = rset.%Get("Depth")
-            Set item.PreferredTerm = rset.%Get("Term")
-            Do payload.Items.Insert(item)
-            Set added = added + 1
-        }
-
-        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
-        Return $$$OK
+        Return tSC
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
@@ -452,84 +163,23 @@ Method HandleGetAncestors(pRequest As Terminology.Production.Msg.SnomedGetAncest
 
 Method HandleGetDescriptions(pRequest As Terminology.Production.Msg.SnomedGetDescriptionsRequest, Output pResponse As Terminology.Production.Msg.SnomedGetDescriptionsResponse) As %Status
 {
-    Set tSC = $$$OK
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetDescriptionsResponse).%New()
 
     Try {
-        Set whereList = ""
-        Set query = ""
+        Set tSC = ..GetRepository().GetDescriptions(
+            pRequest.ConceptId,
+            pRequest.ReleaseId,
+            pRequest.Lang,
+            pRequest.ActiveOnly,
+            pRequest.TypeId,
+            pRequest.Limit,
+            pRequest.Offset,
+            .payload
+        )
+        $$$ThrowOnError(tSC)
 
-        Set sql = "SELECT %ID, DescriptionId, ConceptId, Active, TypeId, Lang, Term, CaseSignificanceId, CONVERT(VARCHAR,EffectiveTime) AS EffectiveTime "_
-                  "FROM Terminology_Snomed.Description "
-
-        Set endSQL = "ORDER BY Term"
-
-        If (pRequest.ReleaseId '= "") {
-            Set whereList = whereList_$ListBuild("ReleaseId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ReleaseId
-        }
-
-        If (pRequest.ConceptId '= "") {
-            Set whereList = whereList_$ListBuild("ConceptId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ConceptId
-        }
-
-        If (pRequest.Lang '= "") {
-            Set whereList = whereList_$ListBuild("Lang = ?")
-            Set tArgs($i(tArgs)) = pRequest.Lang
-        }
-
-        If (pRequest.ActiveOnly) {
-            Set whereList = whereList_$ListBuild("Active = 1")
-        }
-
-        If (pRequest.TypeId '= "") {
-            Set whereList = whereList_$ListBuild("TypeId = ?")
-            Set tArgs($i(tArgs)) = pRequest.TypeId
-        }
-
-        If (whereList '= "") {
-            Set query = sql_"WHERE "_$ListToString(whereList," AND ")_" "_endSQL
-        } Else {
-            Set query = sql_" "_endSQL
-        }
-
-        Set statement = ##class(%SQL.Statement).%New()
-        $$$ThrowOnError(statement.%Prepare(query))
-        Set rset = statement.%Execute(tArgs...)
-
-        Set payload = ##class(Terminology.Snomed.DTO.DescriptionListResult).%New()
-        Set skipped = 0
-        Set added = 0
-        Set limit = $Select(pRequest.Limit>0:pRequest.Limit,1:200)
-        Set offset = $Select(pRequest.Offset>0:pRequest.Offset,1:0)
-
-        While rset.%Next() {
-            If skipped < offset {
-                Set skipped = skipped + 1
-                Continue
-            }
-
-            If added >= limit {
-                Continue
-            }
-
-            Set item = ##class(Terminology.Snomed.DTO.DescriptionSummary).%New()
-            Set item.DescriptionId = rset.%Get("DescriptionId")
-            Set item.ConceptId = rset.%Get("ConceptId")
-            Set item.Active = rset.%Get("Active")
-            Set item.TypeId = rset.%Get("TypeId")
-            Set item.Lang = rset.%Get("Lang")
-            Set item.Term = rset.%Get("Term")
-            Set item.CaseSignificanceId = rset.%Get("CaseSignificanceId")
-            Set item.EffectiveTime = rset.%Get("EffectiveTime")
-            Do payload.Items.Insert(item)
-            Set added = added + 1
-        }
-
-        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
-        Return $$$OK
+        Return tSC
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
@@ -537,7 +187,6 @@ Method HandleGetDescriptions(pRequest As Terminology.Production.Msg.SnomedGetDes
 
 Method HandleGetSubsumes(pRequest As Terminology.Production.Msg.SnomedGetSubsumesRequest, Output pResponse As Terminology.Production.Msg.SnomedGetSubsumesResponse) As %Status
 {
-    Set tSC = $$$OK
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetSubsumesResponse).%New()
 
     Try {
@@ -555,82 +204,18 @@ Method HandleGetSubsumes(pRequest As Terminology.Production.Msg.SnomedGetSubsume
             Return $$$OK
         }
 
-        Set whereList = ""
-        Set query = ""
-        Set sql = "SELECT %ID "_
-                  "FROM Terminology_Snomed.IsaClosure "
-        Set endSQL = ""
+        Set tSC = ..GetRepository().GetSubsumptionRelation(
+            pRequest.ReleaseId,
+            pRequest.View,
+            pRequest.CodeA,
+            pRequest.CodeB,
+            .relationship
+        )
+        $$$ThrowOnError(tSC)
 
-        If (pRequest.ReleaseId '= "") {
-            Set whereList = whereList_$ListBuild("ReleaseId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ReleaseId
-        }
-
-        If (pRequest.View '= "") {
-            Set whereList = whereList_$ListBuild("View = ?")
-            Set tArgs($i(tArgs)) = pRequest.View
-        }
-
-        Set whereList = whereList_$ListBuild("AncestorId = ?")
-        Set tArgs($i(tArgs)) = pRequest.CodeA
-
-        Set whereList = whereList_$ListBuild("DescendantId = ?")
-        Set tArgs($i(tArgs)) = pRequest.CodeB
-
-        If (whereList '= "") {
-            Set query = sql_"WHERE "_$ListToString(whereList," AND ")_" "_endSQL
-        } Else {
-            Set query = sql_" "_endSQL
-        }
-
-        Set statement = ##class(%SQL.Statement).%New()
-        $$$ThrowOnError(statement.%Prepare(query))
-        Set rset = statement.%Execute(tArgs...)
-
-        If rset.%Next() {
-            Set payload.Relationship = "subsumes"
-            Set pResponse.Payload = payload
-            Return $$$OK
-        }
-
-        Kill tArgs
-        Set whereList = ""
-        Set query = ""
-
-        If (pRequest.ReleaseId '= "") {
-            Set whereList = whereList_$ListBuild("ReleaseId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ReleaseId
-        }
-
-        If (pRequest.View '= "") {
-            Set whereList = whereList_$ListBuild("View = ?")
-            Set tArgs($i(tArgs)) = pRequest.View
-        }
-
-        Set whereList = whereList_$ListBuild("AncestorId = ?")
-        Set tArgs($i(tArgs)) = pRequest.CodeB
-
-        Set whereList = whereList_$ListBuild("DescendantId = ?")
-        Set tArgs($i(tArgs)) = pRequest.CodeA
-
-        If (whereList '= "") {
-            Set query = sql_"WHERE "_$ListToString(whereList," AND ")_" "_endSQL
-        } Else {
-            Set query = sql_" "_endSQL
-        }
-
-        Set statement = ##class(%SQL.Statement).%New()
-        $$$ThrowOnError(statement.%Prepare(query))
-        Set rset = statement.%Execute(tArgs...)
-
-        If rset.%Next() {
-            Set payload.Relationship = "subsumed-by"
-        } Else {
-            Set payload.Relationship = "not-subsumed"
-        }
-
+        Set payload.Relationship = relationship
         Set pResponse.Payload = payload
-        Return $$$OK
+        Return tSC
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
@@ -638,58 +223,19 @@ Method HandleGetSubsumes(pRequest As Terminology.Production.Msg.SnomedGetSubsume
 
 Method HandleGetRefsets(pRequest As Terminology.Production.Msg.SnomedGetRefsetsRequest, Output pResponse As Terminology.Production.Msg.SnomedGetRefsetsResponse) As %Status
 {
-    Set tSC = $$$OK
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetRefsetsResponse).%New()
 
     Try {
-        Set whereList = ""
-        Set query = ""
+        Set tSC = ..GetRepository().GetRefsets(
+            pRequest.ReleaseId,
+            pRequest.Limit,
+            pRequest.Offset,
+            .payload
+        )
+        $$$ThrowOnError(tSC)
 
-        Set sql = "SELECT DISTINCT RefsetId "_
-                  "FROM Terminology_Snomed.RefsetMember "
-
-        Set endSQL = "ORDER BY RefsetId"
-
-        If (pRequest.ReleaseId '= "") {
-            Set whereList = whereList_$ListBuild("ReleaseId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ReleaseId
-        }
-
-        If (whereList '= "") {
-            Set query = sql_"WHERE "_$ListToString(whereList," AND ")_" "_endSQL
-        } Else {
-            Set query = sql_" "_endSQL
-        }
-
-        Set statement = ##class(%SQL.Statement).%New()
-        $$$ThrowOnError(statement.%Prepare(query))
-        Set rset = statement.%Execute(tArgs...)
-
-        Set payload = ##class(Terminology.Snomed.DTO.RefsetListResult).%New()
-        Set skipped = 0
-        Set added = 0
-        Set limit = $Select(pRequest.Limit>0:pRequest.Limit,1:100)
-        Set offset = $Select(pRequest.Offset>0:pRequest.Offset,1:0)
-
-        While rset.%Next() {
-            If skipped < offset {
-                Set skipped = skipped + 1
-                Continue
-            }
-
-            If added >= limit {
-                Continue
-            }
-
-            Set item = ##class(Terminology.Snomed.DTO.RefsetSummary).%New()
-            Set item.RefsetId = rset.%Get("RefsetId")
-            Do payload.Items.Insert(item)
-            Set added = added + 1
-        }
-
-        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
-        Return $$$OK
+        Return tSC
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
@@ -697,85 +243,22 @@ Method HandleGetRefsets(pRequest As Terminology.Production.Msg.SnomedGetRefsetsR
 
 Method HandleGetRefsetMembers(pRequest As Terminology.Production.Msg.SnomedGetRefsetMembersRequest, Output pResponse As Terminology.Production.Msg.SnomedGetRefsetMembersResponse) As %Status
 {
-    Set tSC = $$$OK
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetRefsetMembersResponse).%New()
 
     Try {
-        Set whereList = ""
-        Set joinList = ""
-        Set query = ""
+        Set tSC = ..GetRepository().GetRefsetMembers(
+            pRequest.RefsetId,
+            pRequest.ReleaseId,
+            pRequest.Lang,
+            pRequest.Dialect,
+            pRequest.Limit,
+            pRequest.Offset,
+            .payload
+        )
+        $$$ThrowOnError(tSC)
 
-        Set sql = "SELECT rm.%ID, rm.RefsetId, rm.MemberId, rm.ReferencedId AS ConceptId, pt.Term "_
-                  "FROM Terminology_Snomed.RefsetMember rm "_
-                  "LEFT JOIN Terminology_Snomed.PreferredTerm pt "_
-                  "ON pt.ConceptId = rm.ReferencedId AND pt.ReleaseId = rm.ReleaseId "
-
-        Set endSQL = "ORDER BY pt.Term, rm.ReferencedId"
-
-        If (pRequest.Lang '= "") {
-            Set joinList = joinList_$ListBuild("pt.Lang = ?")
-            Set tArgs($i(tArgs)) = pRequest.Lang
-        }
-
-        If (pRequest.Dialect '= "") {
-            Set joinList = joinList_$ListBuild("pt.Dialect = ?")
-            Set tArgs($i(tArgs)) = pRequest.Dialect
-        }
-
-        If (pRequest.ReleaseId '= "") {
-            Set whereList = whereList_$ListBuild("rm.ReleaseId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ReleaseId
-        }
-
-        If (pRequest.RefsetId '= "") {
-            Set whereList = whereList_$ListBuild("rm.RefsetId = ?")
-            Set tArgs($i(tArgs)) = pRequest.RefsetId
-        }
-
-        Set whereList = whereList_$ListBuild("rm.Active = 1")
-
-        If (joinList '= "") {
-            Set sql = sql_" AND "_$ListToString(joinList," AND ")
-        }
-
-        If (whereList '= "") {
-            Set query = sql_" WHERE "_$ListToString(whereList," AND ")_" "_endSQL
-        } Else {
-            Set query = sql_" "_endSQL
-        }
-
-        Set statement = ##class(%SQL.Statement).%New()
-        $$$ThrowOnError(statement.%Prepare(query))
-        Set rset = statement.%Execute(tArgs...)
-
-        Set payload = ##class(Terminology.Snomed.DTO.RefsetMemberListResult).%New()
-        Set skipped = 0
-        Set added = 0
-        Set limit = $Select(pRequest.Limit>0:pRequest.Limit,1:100)
-        Set offset = $Select(pRequest.Offset>0:pRequest.Offset,1:0)
-
-        While rset.%Next() {
-            If skipped < offset {
-                Set skipped = skipped + 1
-                Continue
-            }
-
-            If added >= limit {
-                Continue
-            }
-
-            Set item = ##class(Terminology.Snomed.DTO.RefsetMemberSummary).%New()
-            Set item.RefsetId = rset.%Get("RefsetId")
-            Set item.MemberId = rset.%Get("MemberId")
-            Set item.ConceptId = rset.%Get("ConceptId")
-            Set item.PreferredTerm = rset.%Get("Term")
-            Do payload.Items.Insert(item)
-            Set added = added + 1
-        }
-
-        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
-        Return $$$OK
+        Return tSC
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
@@ -783,58 +266,26 @@ Method HandleGetRefsetMembers(pRequest As Terminology.Production.Msg.SnomedGetRe
 
 Method HandleValidateCode(pRequest As Terminology.Production.Msg.SnomedValidateCodeRequest, Output pResponse As Terminology.Production.Msg.SnomedValidateCodeResponse) As %Status
 {
-    Set tSC = $$$OK
     Set pResponse = ##class(Terminology.Production.Msg.SnomedValidateCodeResponse).%New()
 
     Try {
-        Set whereList = ""
-        Set query = ""
-
-        Set sql = "SELECT %ID, Active "_
-                  "FROM Terminology_Snomed.Concept "
-
-        Set endSQL = ""
-
-        If (pRequest.ReleaseId '= "") {
-            Set whereList = whereList_$ListBuild("ReleaseId = ?")
-            Set tArgs($i(tArgs)) = pRequest.ReleaseId
-        }
-
-        If (pRequest.Code '= "") {
-            Set whereList = whereList_$ListBuild("ConceptId = ?")
-            Set tArgs($i(tArgs)) = pRequest.Code
-        }
-
-        If (whereList '= "") {
-            Set query = sql_"WHERE "_$ListToString(whereList," AND ")_" "_endSQL
-        } Else {
-            Set query = sql_" "_endSQL
-        }
-
-        Set statement = ##class(%SQL.Statement).%New()
-        $$$ThrowOnError(statement.%Prepare(query))
-        Set rset = statement.%Execute(tArgs...)
-
-        Set payload = ##class(Terminology.Snomed.DTO.ValidateCodeResult).%New()
-
-        If rset.%Next() {
-            Set payload.Exists = 1
-            Set payload.Active = rset.%Get("Active")
-        } Else {
-            Set payload.Exists = 0
-            Set payload.Active = 0
-        }
+        Set tSC = ..GetRepository().ValidateCode(
+            pRequest.ReleaseId,
+            pRequest.Code,
+            .payload
+        )
+        $$$ThrowOnError(tSC)
 
         Set pResponse.Payload = payload
-        Return $$$OK
+        Return tSC
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
 }
 
-ClassMethod NormalizeTerm(pValue As %String) As %String
+Method GetRepository() As Terminology.Snomed.SnomedRepository [ Private ]
 {
-    Quit $ZCONVERT($Get(pValue),"L")
+    Quit ##class(Terminology.Snomed.SnomedRepository).%New()
 }
 
 }
