@@ -1,0 +1,71 @@
+@baseUrl = http://localhost:52774/snomed
+@rootConceptId = 138875005
+@clinicalFindingId = 404684003
+@diseaseId = 64572001
+@myocardialInfarctionId = 22298006
+@codeA = 64572001
+@codeB = 22298006
+@refsetId = 900000000000508004
+@releaseId = SNOMED CT version 20260101
+@username = superuser
+@password = SYS
+
+### Search concepts
+GET {{baseUrl}}/search?q=infarto&releaseId={{releaseId}}&lang=es&dialect=es-ES&limit=20&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get concept by ID: Myocardial infarction
+GET {{baseUrl}}/concepts/{{myocardialInfarctionId}}?releaseId={{releaseId}}&lang=es&dialect=es-ES
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get children: Disease direct children
+GET {{baseUrl}}/concepts/{{diseaseId}}/children?releaseId={{releaseId}}&view=inferred&lang=es&dialect=es-ES
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get descendants: Clinical finding descendants
+GET {{baseUrl}}/concepts/{{clinicalFindingId}}/descendants?releaseId={{releaseId}}&view=inferred&lang=es&dialect=es-ES&limit=50&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get ancestors: Myocardial infarction ancestors
+GET {{baseUrl}}/concepts/{{myocardialInfarctionId}}/ancestors?releaseId={{releaseId}}&view=inferred&lang=es&dialect=es-ES&includeSelf=0&maxDepth=10&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get descriptions: Myocardial infarction FSN
+GET {{baseUrl}}/concepts/{{myocardialInfarctionId}}/descriptions?releaseId={{releaseId}}&lang=es&activeOnly=1&typeId=900000000000003001&limit=200&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get descriptions: Myocardial infarction synonyms
+GET {{baseUrl}}/concepts/{{myocardialInfarctionId}}/descriptions?releaseId={{releaseId}}&lang=es&activeOnly=1&typeId=900000000000013009&limit=200&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Check subsumption: Disease subsumes Myocardial infarction
+GET {{baseUrl}}/subsumes/{{codeA}}/{{codeB}}?releaseId={{releaseId}}&view=inferred
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### List refsets
+GET {{baseUrl}}/refsets?releaseId={{releaseId}}&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get refset members
+GET {{baseUrl}}/refsets/{{refsetId}}/members?releaseId={{releaseId}}&lang=es&dialect=es-ES&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Validate code: SNOMED CT Concept
+GET {{baseUrl}}/validate-code?releaseId={{releaseId}}&code={{rootConceptId}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Validate code: Myocardial infarction
+GET {{baseUrl}}/validate-code?releaseId={{releaseId}}&code={{myocardialInfarctionId}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
