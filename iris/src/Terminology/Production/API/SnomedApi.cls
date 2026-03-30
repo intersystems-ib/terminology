@@ -65,7 +65,7 @@ ClassMethod Search() As %Status
             Return $$$OK
         }
 
-        Do ..WriteDynamicResponse(rsp.Payload)
+        Do ..WriteDtoResponse(rsp.Payload)
         Return $$$OK
     } Catch ex {
         Do ..WriteError(ex.DisplayString(), 500)
@@ -93,7 +93,7 @@ ClassMethod GetConcept(conceptId As %String) As %Status
             Return $$$OK
         }
 
-        Do ..WriteDynamicResponse(rsp.Payload)
+        Do ..WriteDtoResponse(rsp.Payload)
         Return $$$OK
     } Catch ex {
         Do ..WriteError(ex.DisplayString(), 500)
@@ -123,7 +123,7 @@ ClassMethod GetChildren(conceptId As %String) As %Status
             Return $$$OK
         }
 
-        Do ..WriteDynamicResponse(rsp.Payload)
+        Do ..WriteDtoResponse(rsp.Payload)
         Return $$$OK
     } Catch ex {
         Do ..WriteError(ex.DisplayString(), 500)
@@ -156,7 +156,7 @@ ClassMethod GetDescendants(conceptId As %String) As %Status
             Return $$$OK
         }
 
-        Do ..WriteDynamicResponse(rsp.Payload)
+        Do ..WriteDtoResponse(rsp.Payload)
         Return $$$OK
     } Catch ex {
         Do ..WriteError(ex.DisplayString(), 500)
@@ -191,7 +191,7 @@ ClassMethod GetAncestors(conceptId As %String) As %Status
             Return $$$OK
         }
 
-        Do ..WriteDynamicResponse(rsp.Payload)
+        Do ..WriteDtoResponse(rsp.Payload)
         Return $$$OK
     } Catch ex {
         Do ..WriteError(ex.DisplayString(), 500)
@@ -222,7 +222,7 @@ ClassMethod GetDescriptions(conceptId As %String) As %Status
             Return $$$OK
         }
 
-        Do ..WriteDynamicResponse(rsp.Payload)
+        Do ..WriteDtoResponse(rsp.Payload)
         Return $$$OK
     } Catch ex {
         Do ..WriteError(ex.DisplayString(), 500)
@@ -249,7 +249,7 @@ ClassMethod GetSubsumes(codeA As %String, codeB As %String) As %Status
             Return $$$OK
         }
 
-        Do ..WriteDynamicResponse(rsp.Payload)
+        Do ..WriteDtoResponse(rsp.Payload)
         Return $$$OK
     } Catch ex {
         Do ..WriteError(ex.DisplayString(), 500)
@@ -275,7 +275,7 @@ ClassMethod GetRefsets() As %Status
             Return $$$OK
         }
 
-        Do ..WriteDynamicResponse(rsp.Payload)
+        Do ..WriteDtoResponse(rsp.Payload)
         Return $$$OK
     } Catch ex {
         Do ..WriteError(ex.DisplayString(), 500)
@@ -306,7 +306,7 @@ ClassMethod GetRefsetMembers(refsetId As %String) As %Status
             Return $$$OK
         }
 
-        Do ..WriteDynamicResponse(rsp.Payload)
+        Do ..WriteDtoResponse(rsp.Payload)
         Return $$$OK
     } Catch ex {
         Do ..WriteError(ex.DisplayString(), 500)
@@ -330,7 +330,7 @@ ClassMethod ValidateCode() As %Status
             Return $$$OK
         }
 
-        Do ..WriteDynamicResponse(rsp.Payload)
+        Do ..WriteDtoResponse(rsp.Payload)
         Return $$$OK
     } Catch ex {
         Do ..WriteError(ex.DisplayString(), 500)
@@ -344,11 +344,12 @@ ClassMethod SendGatewayRequest(pRequest As Ens.Request, Output pResponse As Ens.
   Quit instance.SendRequestSync(..#TargetConfigName, pRequest, .pResponse)
 }
 
-ClassMethod WriteDynamicResponse(pPayload As %DynamicAbstractObject) As %Status
+ClassMethod WriteDtoResponse(pPayload As Terminology.Snomed.DTO.Base) As %Status
 {
     Set %response.ContentType = "application/json"
-    Write pPayload.%ToJSON()
-    Return $$$OK
+    Set json = ""
+    set tSC = pPayload.%JSONExport()
+    return tSC
 }
 
 ClassMethod WriteError(pMessage As %String, pHttpCode As %Integer = 500) As %Status

@@ -86,7 +86,7 @@ Method HandleSearch(pRequest As Terminology.Production.Msg.SnomedSearchRequest, 
                     $$$ThrowOnError(statement.%Prepare(query))
         set rset = statement.%Execute(tArgs...)
 
-        Set items = []
+        Set payload = ##class(Terminology.Snomed.DTO.SearchResult).%New()
         Set skipped = 0
         Set added = 0
         Set limit = $Select(pRequest.Limit>0:pRequest.Limit,1:20)
@@ -102,17 +102,14 @@ Method HandleSearch(pRequest As Terminology.Production.Msg.SnomedSearchRequest, 
                 Continue
             }
 
-            Set item = {}
-            Set item.conceptId = rset.%Get("ConceptId")
-            Set item.preferredTerm = rset.%Get("Term")
-            Do items.%Push(item)
+            Set item = ##class(Terminology.Snomed.DTO.ConceptSummary).%New()
+            Set item.ConceptId = rset.%Get("ConceptId")
+            Set item.PreferredTerm = rset.%Get("Term")
+            Do payload.Items.Insert(item)
             Set added = added + 1
         }
 
-        Set payload = {}
-        Set payload.items = items
-        Set payload.count = items.%Size()
-
+        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
         Return $$$OK
     } Catch ex {
@@ -177,14 +174,14 @@ Method HandleGetConcept(pRequest As Terminology.Production.Msg.SnomedGetConceptR
         $$$ThrowOnError(statement.%Prepare(query))
         Set rset = statement.%Execute(tArgs...)
 
-        Set payload = {}
+        Set payload = ##class(Terminology.Snomed.DTO.ConceptResult).%New()
         If rset.%Next() {
-            Set payload.conceptId = rset.%Get("ConceptId")
-            Set payload.active = rset.%Get("Active")
-            Set payload.moduleId = rset.%Get("ModuleId")
-            Set payload.definitionStatusId = rset.%Get("DefinitionStatusId")
-            Set payload.effectiveTime = rset.%Get("EffectiveTime")
-            Set payload.preferredTerm = rset.%Get("Term")
+            Set payload.ConceptId = rset.%Get("ConceptId")
+            Set payload.Active = rset.%Get("Active")
+            Set payload.ModuleId = rset.%Get("ModuleId")
+            Set payload.DefinitionStatusId = rset.%Get("DefinitionStatusId")
+            Set payload.EffectiveTime = rset.%Get("EffectiveTime")
+            Set payload.PreferredTerm = rset.%Get("Term")
         }
 
         Set pResponse.Payload = payload
@@ -251,18 +248,16 @@ Method HandleGetChildren(pRequest As Terminology.Production.Msg.SnomedGetChildre
         $$$ThrowOnError(statement.%Prepare(query))
         Set rset = statement.%Execute(tArgs...)
 
-        Set items = []
+        Set payload = ##class(Terminology.Snomed.DTO.ConceptListResult).%New()
         While rset.%Next() {
-            Set item = {}
-            Set item.conceptId = rset.%Get("ConceptId")
-            Set item.depth = rset.%Get("Depth")
-            Set item.preferredTerm = rset.%Get("Term")
-            Do items.%Push(item)
+            Set item = ##class(Terminology.Snomed.DTO.ConceptSummary).%New()
+            Set item.ConceptId = rset.%Get("ConceptId")
+            Set item.Depth = rset.%Get("Depth")
+            Set item.PreferredTerm = rset.%Get("Term")
+            Do payload.Items.Insert(item)
         }
-        Set payload = {}
-        Set payload.items = items
-        Set payload.count = items.%Size()
 
+        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
         Return $$$OK
     } Catch ex {
@@ -326,7 +321,7 @@ Method HandleGetDescendants(pRequest As Terminology.Production.Msg.SnomedGetDesc
         $$$ThrowOnError(statement.%Prepare(query))
         Set rset = statement.%Execute(tArgs...)
 
-        Set items = []
+        Set payload = ##class(Terminology.Snomed.DTO.ConceptListResult).%New()
         Set skipped = 0
         Set added = 0
         Set limit = $Select(pRequest.Limit>0:pRequest.Limit,1:100)
@@ -342,18 +337,15 @@ Method HandleGetDescendants(pRequest As Terminology.Production.Msg.SnomedGetDesc
                 Continue
             }
 
-            Set item = {}
-            Set item.conceptId = rset.%Get("ConceptId")
-            Set item.depth = rset.%Get("Depth")
-            Set item.preferredTerm = rset.%Get("Term")
-            Do items.%Push(item)
+            Set item = ##class(Terminology.Snomed.DTO.ConceptSummary).%New()
+            Set item.ConceptId = rset.%Get("ConceptId")
+            Set item.Depth = rset.%Get("Depth")
+            Set item.PreferredTerm = rset.%Get("Term")
+            Do payload.Items.Insert(item)
             Set added = added + 1
         }
 
-        Set payload = {}
-        Set payload.items = items
-        Set payload.count = items.%Size()
-
+        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
         Return $$$OK
     } Catch ex {
@@ -426,7 +418,7 @@ Method HandleGetAncestors(pRequest As Terminology.Production.Msg.SnomedGetAncest
         $$$ThrowOnError(statement.%Prepare(query))
         Set rset = statement.%Execute(tArgs...)
 
-        Set items = []
+        Set payload = ##class(Terminology.Snomed.DTO.ConceptListResult).%New()
         Set skipped = 0
         Set added = 0
         Set limit = $Select(pRequest.Limit>0:pRequest.Limit,1:100)
@@ -442,18 +434,15 @@ Method HandleGetAncestors(pRequest As Terminology.Production.Msg.SnomedGetAncest
                 Continue
             }
 
-            Set item = {}
-            Set item.conceptId = rset.%Get("ConceptId")
-            Set item.depth = rset.%Get("Depth")
-            Set item.preferredTerm = rset.%Get("Term")
-            Do items.%Push(item)
+            Set item = ##class(Terminology.Snomed.DTO.ConceptSummary).%New()
+            Set item.ConceptId = rset.%Get("ConceptId")
+            Set item.Depth = rset.%Get("Depth")
+            Set item.PreferredTerm = rset.%Get("Term")
+            Do payload.Items.Insert(item)
             Set added = added + 1
         }
 
-        Set payload = {}
-        Set payload.items = items
-        Set payload.count = items.%Size()
-
+        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
         Return $$$OK
     } Catch ex {
@@ -509,7 +498,7 @@ Method HandleGetDescriptions(pRequest As Terminology.Production.Msg.SnomedGetDes
         $$$ThrowOnError(statement.%Prepare(query))
         Set rset = statement.%Execute(tArgs...)
 
-        Set items = []
+        Set payload = ##class(Terminology.Snomed.DTO.DescriptionListResult).%New()
         Set skipped = 0
         Set added = 0
         Set limit = $Select(pRequest.Limit>0:pRequest.Limit,1:200)
@@ -525,23 +514,20 @@ Method HandleGetDescriptions(pRequest As Terminology.Production.Msg.SnomedGetDes
                 Continue
             }
 
-            Set item = {}
-            Set item.descriptionId = rset.%Get("DescriptionId")
-            Set item.conceptId = rset.%Get("ConceptId")
-            Set item.active = rset.%Get("Active")
-            Set item.typeId = rset.%Get("TypeId")
-            Set item.lang = rset.%Get("Lang")
-            Set item.term = rset.%Get("Term")
-            Set item.caseSignificanceId = rset.%Get("CaseSignificanceId")
-            Set item.effectiveTime = rset.%Get("EffectiveTime")
-            Do items.%Push(item)
+            Set item = ##class(Terminology.Snomed.DTO.DescriptionSummary).%New()
+            Set item.DescriptionId = rset.%Get("DescriptionId")
+            Set item.ConceptId = rset.%Get("ConceptId")
+            Set item.Active = rset.%Get("Active")
+            Set item.TypeId = rset.%Get("TypeId")
+            Set item.Lang = rset.%Get("Lang")
+            Set item.Term = rset.%Get("Term")
+            Set item.CaseSignificanceId = rset.%Get("CaseSignificanceId")
+            Set item.EffectiveTime = rset.%Get("EffectiveTime")
+            Do payload.Items.Insert(item)
             Set added = added + 1
         }
 
-        Set payload = {}
-        Set payload.items = items
-        Set payload.count = items.%Size()
-
+        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
         Return $$$OK
     } Catch ex {
@@ -555,16 +541,16 @@ Method HandleGetSubsumes(pRequest As Terminology.Production.Msg.SnomedGetSubsume
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetSubsumesResponse).%New()
 
     Try {
-        Set payload = {}
+        Set payload = ##class(Terminology.Snomed.DTO.SubsumesResult).%New()
 
         If (pRequest.CodeA = "") || (pRequest.CodeB = "") {
-            Set payload.relationship = "not-subsumed"
+            Set payload.Relationship = "not-subsumed"
             Set pResponse.Payload = payload
             Return $$$OK
         }
 
         If (pRequest.CodeA = pRequest.CodeB) {
-            Set payload.relationship = "equivalent"
+            Set payload.Relationship = "equivalent"
             Set pResponse.Payload = payload
             Return $$$OK
         }
@@ -602,7 +588,7 @@ Method HandleGetSubsumes(pRequest As Terminology.Production.Msg.SnomedGetSubsume
         Set rset = statement.%Execute(tArgs...)
 
         If rset.%Next() {
-            Set payload.relationship = "subsumes"
+            Set payload.Relationship = "subsumes"
             Set pResponse.Payload = payload
             Return $$$OK
         }
@@ -638,9 +624,9 @@ Method HandleGetSubsumes(pRequest As Terminology.Production.Msg.SnomedGetSubsume
         Set rset = statement.%Execute(tArgs...)
 
         If rset.%Next() {
-            Set payload.relationship = "subsumed-by"
+            Set payload.Relationship = "subsumed-by"
         } Else {
-            Set payload.relationship = "not-subsumed"
+            Set payload.Relationship = "not-subsumed"
         }
 
         Set pResponse.Payload = payload
@@ -679,7 +665,7 @@ Method HandleGetRefsets(pRequest As Terminology.Production.Msg.SnomedGetRefsetsR
         $$$ThrowOnError(statement.%Prepare(query))
         Set rset = statement.%Execute(tArgs...)
 
-        Set items = []
+        Set payload = ##class(Terminology.Snomed.DTO.RefsetListResult).%New()
         Set skipped = 0
         Set added = 0
         Set limit = $Select(pRequest.Limit>0:pRequest.Limit,1:100)
@@ -695,16 +681,13 @@ Method HandleGetRefsets(pRequest As Terminology.Production.Msg.SnomedGetRefsetsR
                 Continue
             }
 
-            Set item = {}
-            Set item.refsetId = rset.%Get("RefsetId")
-            Do items.%Push(item)
+            Set item = ##class(Terminology.Snomed.DTO.RefsetSummary).%New()
+            Set item.RefsetId = rset.%Get("RefsetId")
+            Do payload.Items.Insert(item)
             Set added = added + 1
         }
 
-        Set payload = {}
-        Set payload.items = items
-        Set payload.count = items.%Size()
-
+        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
         Return $$$OK
     } Catch ex {
@@ -765,7 +748,7 @@ Method HandleGetRefsetMembers(pRequest As Terminology.Production.Msg.SnomedGetRe
         $$$ThrowOnError(statement.%Prepare(query))
         Set rset = statement.%Execute(tArgs...)
 
-        Set items = []
+        Set payload = ##class(Terminology.Snomed.DTO.RefsetMemberListResult).%New()
         Set skipped = 0
         Set added = 0
         Set limit = $Select(pRequest.Limit>0:pRequest.Limit,1:100)
@@ -781,19 +764,16 @@ Method HandleGetRefsetMembers(pRequest As Terminology.Production.Msg.SnomedGetRe
                 Continue
             }
 
-            Set item = {}
-            Set item.refsetId = rset.%Get("RefsetId")
-            Set item.memberId = rset.%Get("MemberId")
-            Set item.conceptId = rset.%Get("ConceptId")
-            Set item.preferredTerm = rset.%Get("Term")
-            Do items.%Push(item)
+            Set item = ##class(Terminology.Snomed.DTO.RefsetMemberSummary).%New()
+            Set item.RefsetId = rset.%Get("RefsetId")
+            Set item.MemberId = rset.%Get("MemberId")
+            Set item.ConceptId = rset.%Get("ConceptId")
+            Set item.PreferredTerm = rset.%Get("Term")
+            Do payload.Items.Insert(item)
             Set added = added + 1
         }
 
-        Set payload = {}
-        Set payload.items = items
-        Set payload.count = items.%Size()
-
+        Set payload.Count = $Select($IsObject(payload.Items):payload.Items.Count(),1:0)
         Set pResponse.Payload = payload
         Return $$$OK
     } Catch ex {
@@ -835,14 +815,14 @@ Method HandleValidateCode(pRequest As Terminology.Production.Msg.SnomedValidateC
         $$$ThrowOnError(statement.%Prepare(query))
         Set rset = statement.%Execute(tArgs...)
 
-        Set payload = {}
+        Set payload = ##class(Terminology.Snomed.DTO.ValidateCodeResult).%New()
 
         If rset.%Next() {
-            Set payload.exists = 1
-            Set payload.active = rset.%Get("Active")
+            Set payload.Exists = 1
+            Set payload.Active = rset.%Get("Active")
         } Else {
-            Set payload.exists = 0
-            Set payload.active = 0
+            Set payload.Exists = 0
+            Set payload.Active = 0
         }
 
         Set pResponse.Payload = payload

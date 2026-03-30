@@ -1,15 +1,17 @@
 Class Terminology.Production.Msg.SnomedGetDescendantsResponse Extends Ens.Response
 {
 
-Property Payload As %DynamicObject;
+Property Payload As Terminology.Snomed.DTO.ConceptListResult;
 
 Storage Default
 {
-<Data name="Payload">
-<Attribute>Payload</Attribute>
-<Structure>node</Structure>
-<Subscript>"Terminology.Production.Msg.SnomedGetDescendantsResponse.Payload"</Subscript>
+<Data name="SnomedGetDescendantsResponseDefaultData">
+<Subscript>"SnomedGetDescendantsResponse"</Subscript>
+<Value name="1">
+<Value>Payload</Value>
+</Value>
 </Data>
+<DefaultData>SnomedGetDescendantsResponseDefaultData</DefaultData>
 <Type>%Storage.Persistent</Type>
 }
 
