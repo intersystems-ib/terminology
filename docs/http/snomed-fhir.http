@@ -39,6 +39,21 @@ GET {{baseUrl}}/CodeSystem/$lookup?system=http://snomed.info/sct&code={{conceptC
 Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
 
+### CodeSystem instance $lookup by code
+GET {{baseUrl}}/CodeSystem/snomed/$lookup?code={{conceptCode}}&displayLanguage=es
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem $validate-code by code
+GET {{baseUrl}}/CodeSystem/$validate-code?system=http://snomed.info/sct&code={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem instance $validate-code by code
+GET {{baseUrl}}/CodeSystem/snomed/$validate-code?code={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
 ### ValueSet read by id
 GET {{baseUrl}}/ValueSet/{{valueSetId}}
 Accept: application/fhir+json

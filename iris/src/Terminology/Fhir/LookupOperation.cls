@@ -87,7 +87,7 @@ ClassMethod ParseLookupInputs(pRequest As HS.FHIRServer.API.Data.Request, Output
 }
 
 /// Resolves the effective system, version and language context from the request target and metadata.
-ClassMethod ResolveLookupContext(pResourceId As %String, pRequestedSystem As %String, pRequestedVersion As %String, pDisplayLanguage As %String, Output pContext As %DynamicObject) As %Status [ Private ]
+ClassMethod ResolveLookupContext(pResourceId As %String, pRequestedSystem As %String, pRequestedVersion As %String, pDisplayLanguage As %String, Output pContext As %DynamicObject) As %Status
 {
     Set pContext = ##class(%DynamicObject).%New()
     Set service = ##class(Terminology.Core.TermService).%New()
@@ -169,7 +169,7 @@ ClassMethod BuildLookupResponse(pContext As %DynamicObject, pConcept As Terminol
     Quit response
 }
 
-ClassMethod BuildStringParameter(pName As %String, pValue As %String) As %DynamicObject [ Private ]
+ClassMethod BuildStringParameter(pName As %String, pValue As %String) As %DynamicObject
 {
     Set parameter = ##class(%DynamicObject).%New()
     Do parameter.%Set("name", pName)
