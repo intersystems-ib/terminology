@@ -1,16 +1,23 @@
+/// Stores one SNOMED CT concept row for a specific release.
 Class Terminology.Snomed.Concept Extends %Persistent
 {
 
+/// Internal release identifier used to partition imported SNOMED data.
 Property ReleaseId As %String(MAXLEN = 64) [ Required ];
 
+/// Stable SNOMED CT concept identifier from the RF2 concept file.
 Property ConceptId As %BigInt [ Required ];
 
+/// Active flag from RF2, typically 1 for active or 0 for inactive.
 Property Active As %Integer [ Required ];
 
+/// Module that published the concept in this release.
 Property ModuleId As %BigInt;
 
+/// SNOMED definition status concept id, for example primitive or fully defined.
 Property DefinitionStatusId As %BigInt;
 
+/// Effective date carried by the source RF2 row.
 Property EffectiveTime As %Date;
 
 Index PK On (ReleaseId, ConceptId) [ Unique ];

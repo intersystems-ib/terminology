@@ -1,16 +1,17 @@
+/// Configures which language reference set should be used for a release, language, and dialect.
 Class Terminology.Snomed.LanguageRefSetConfig Extends %Persistent
 {
 
+/// Internal release identifier used to partition imported SNOMED data.
 Property ReleaseId As %String(MAXLEN = 64) [ Required ];
 
+/// Base language code, for example "es".
 Property Lang As %String(MAXLEN = 10) [ Required ];
 
-// "es"
-
+/// Dialect key, for example "es-ES" or "default".
 Property Dialect As %String(MAXLEN = 20) [ Required ];
 
-// "es-ES" o "default"
-
+/// SNOMED language reference set concept id used to resolve preferred terms.
 Property RefsetId As %BigInt [ Required ];
 
 Index PK On (ReleaseId, Lang, Dialect) [ Unique ];

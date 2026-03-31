@@ -1,10 +1,14 @@
+/// Maps a release to the modules that belong to the loaded SNOMED edition or extension.
 Class Terminology.Snomed.EditionModule Extends %Persistent
 {
 
+/// Internal release identifier used to partition imported SNOMED data.
 Property ReleaseId As %String(MAXLEN = 64) [ Required ];
 
+/// Module concept id present in the edition.
 Property ModuleId As %BigInt [ Required ];
 
+/// Local role assigned to the module during import logic.
 Property RoleModule As %String(MAXLEN = 30) [ Required ];
 
 Index PK On (ReleaseId, ModuleId) [ Unique ];

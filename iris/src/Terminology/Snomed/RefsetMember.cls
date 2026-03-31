@@ -1,18 +1,26 @@
+/// Stores membership rows for SNOMED reference sets in a specific release.
 Class Terminology.Snomed.RefsetMember Extends %Persistent
 {
 
+/// Internal release identifier used to partition imported SNOMED data.
 Property ReleaseId As %String(MAXLEN = 64) [ Required ];
 
+/// Reference set concept id that owns this member.
 Property RefsetId As %BigInt [ Required ];
 
+/// RF2 member identifier for the reference set row.
 Property MemberId As %String(MAXLEN = 64) [ Required ];
 
+/// Referenced component id, usually a concept or description depending on the refset type.
 Property ReferencedId As %BigInt [ Required ];
 
+/// Active flag from RF2, typically 1 for active or 0 for inactive.
 Property Active As %Integer [ Required ];
 
+/// Effective date carried by the source RF2 row.
 Property EffectiveTime As %Date;
 
+/// Extra refset-specific fields serialized as text when the importer does not model them explicitly.
 Property Extra As %String(MAXLEN = 32000);
 
 Index PK On (ReleaseId, RefsetId, MemberId) [ Unique ];

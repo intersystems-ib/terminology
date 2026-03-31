@@ -1,14 +1,20 @@
+/// Stores the precomputed transitive closure of SNOMED IS-A relationships for fast hierarchy queries.
 Class Terminology.Snomed.IsaClosure Extends %Persistent
 {
 
+/// Internal release identifier used to partition imported SNOMED data.
 Property ReleaseId As %String(MAXLEN = 64) [ Required ];
 
+/// Closure flavor, typically stated or inferred.
 Property View As %String(MAXLEN = 10) [ Required ];
 
+/// Ancestor concept id in the hierarchy.
 Property AncestorId As %BigInt [ Required ];
 
+/// Descendant concept id in the hierarchy.
 Property DescendantId As %BigInt [ Required ];
 
+/// Number of IS-A hops between ancestor and descendant.
 Property Depth As %Integer [ Required ];
 
 Index PK On (ReleaseId, View, AncestorId, DescendantId) [ Unique ];

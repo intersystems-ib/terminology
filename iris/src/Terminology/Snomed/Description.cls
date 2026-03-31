@@ -1,22 +1,32 @@
+/// Stores one SNOMED CT description row linked to a concept in a release.
 Class Terminology.Snomed.Description Extends %Persistent
 {
 
+/// Internal release identifier used to partition imported SNOMED data.
 Property ReleaseId As %String(MAXLEN = 64) [ Required ];
 
+/// Stable SNOMED CT description identifier from RF2.
 Property DescriptionId As %BigInt [ Required ];
 
+/// Concept that owns this description.
 Property ConceptId As %BigInt [ Required ];
 
+/// Active flag from RF2, typically 1 for active or 0 for inactive.
 Property Active As %Integer [ Required ];
 
+/// SNOMED description type concept id, such as FSN, synonym, or text definition.
 Property TypeId As %BigInt [ Required ];
 
+/// Language code of the term text, for example "es" or "en".
 Property Lang As %String(MAXLEN = 10) [ Required ];
 
+/// Human-readable term text shown to users.
 Property Term As %String(MAXLEN = 2000) [ Required ];
 
+/// SNOMED case significance concept id for the term.
 Property CaseSignificanceId As %BigInt;
 
+/// Effective date carried by the source RF2 row.
 Property EffectiveTime As %Date;
 
 Index PK On (ReleaseId, DescriptionId) [ Unique ];

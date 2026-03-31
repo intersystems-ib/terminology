@@ -1,18 +1,26 @@
+/// Stores the resolved preferred term for a concept in a specific language and dialect.
 Class Terminology.Snomed.PreferredTerm Extends %Persistent
 {
 
+/// Internal release identifier used to partition imported SNOMED data.
 Property ReleaseId As %String(MAXLEN = 64) [ Required ];
 
+/// Concept whose preferred term was selected.
 Property ConceptId As %BigInt [ Required ];
 
+/// Base language code used for the selection.
 Property Lang As %String(MAXLEN = 10) [ Required ];
 
+/// Dialect used to resolve the preferred term.
 Property Dialect As %String(MAXLEN = 20) [ Required ];
 
+/// Description chosen as the preferred term.
 Property DescriptionId As %BigInt [ Required ];
 
+/// Display text of the selected preferred term.
 Property Term As %String(MAXLEN = 2000) [ Required ];
 
+/// Normalized version of the term used for searching.
 Property TermNorm As %String(MAXLEN = 2000);
 
 Index PK On (ReleaseId, ConceptId, Lang, Dialect) [ Unique ];
