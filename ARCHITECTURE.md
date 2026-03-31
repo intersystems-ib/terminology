@@ -156,3 +156,4 @@ When modifying code:
 - avoid introducing generic abstractions unless they support at least 2 real use cases
 - keep SNOMED-specific logic out of generic FHIR classes
 - document every new service contract before implementing it
+- add short meaningful comments to classes, methods and persistent properties when that improves maintainability and developer understanding

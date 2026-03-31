@@ -8,11 +8,23 @@ Prefer:
 - thin API layer
 - business logic in service layer
 - SQL isolated in repository layer
+- short, meaningful descriptive comments on classes, methods and persistent properties when they help a developer understand intent quickly
 
 Avoid:
 - mixing API, business logic and SQL in the same class
 - "generic" abstractions with no immediate use
 - SNOMED assumptions inside common classes
+- redundant comments that only restate the code
+
+## Commenting conventions
+
+Use short descriptive comments to improve readability and maintenance:
+
+- add a meaningful class comment when responsibility is not obvious from the name alone
+- add a meaningful method comment when the method contains non-trivial intent, business rules or important side effects
+- add a meaningful comment on persistent properties when the stored meaning, lifecycle or constraints are not obvious
+- keep comments brief and focused on intent, behavior or persistence semantics
+- prefer comments that help another developer understand why the code exists or how it should be used
 
 ## Naming conventions
 
