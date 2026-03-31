@@ -6,3 +6,49 @@
 GET {{baseUrl}}/metadata
 Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
+
+### TODO: TerminologyCapabilities
+GET {{baseUrl}}/metadata?mode=terminology
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem read by id
+GET {{baseUrl}}/CodeSystem/example
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem search
+GET {{baseUrl}}/CodeSystem
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem search by url
+GET {{baseUrl}}/CodeSystem?url=http://snomed.info/sct
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem search by name
+GET {{baseUrl}}/CodeSystem?name=SNOMED
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet read by id
+GET {{baseUrl}}/ValueSet/example
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet search
+GET {{baseUrl}}/ValueSet
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet search by url
+GET {{baseUrl}}/ValueSet?url=http://snomed.info/sct?fhir_vs
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet search by name
+GET {{baseUrl}}/ValueSet?name=SNOMED
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
