@@ -1,0 +1,8 @@
+@baseUrl = http://localhost:52774/csp/healthshare/terminology/fhir/r4
+@username = superuser
+@password = SYS
+
+### CapabilityStatement
+GET {{baseUrl}}/metadata
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
