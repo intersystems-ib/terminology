@@ -460,6 +460,37 @@ Method GetRefsetMembers(pRefsetId As %String = "", pReleaseId As %String = "", p
     }
 }
 
+/// Checks whether a refset identifier exists in the loaded SNOMED refset member data.
+Method RefsetExists(pRefsetId As %String = "", pReleaseId As %String = "", Output pExists As %Boolean) As %Status
+{
+    Set pExists = 0
+
+    Try {
+        Set whereList = ""
+        Set argCount = 0
+        Set sql = "SELECT TOP 1 RefsetId FROM Terminology_Snomed.RefsetMember "
+
+        If (pReleaseId '= "") {
+            Set whereList = whereList_$ListBuild("ReleaseId = ?")
+            Do ..AddArgument(.args, .argCount, pReleaseId)
+        }
+
+        If (pRefsetId '= "") {
+            Set whereList = whereList_$ListBuild("RefsetId = ?")
+            Do ..AddArgument(.args, .argCount, pRefsetId)
+        }
+
+        Set query = ..BuildQuery(sql, whereList, "")
+        Set tSC = ..ExecuteQuery(query, .args, argCount, .rset)
+        $$$ThrowOnError(tSC)
+
+        Set pExists = rset.%Next()
+        Return $$$OK
+    } Catch ex {
+        Return $$$ERROR($$$GeneralError, ex.DisplayString())
+    }
+}
+
 /// Checks whether a concept exists in the requested release and whether it is active.
 Method ValidateCode(pReleaseId As %String = "", pCode As %String = "", Output pResult As Terminology.Snomed.DTO.ValidateCodeResult) As %Status
 {

@@ -1,6 +1,7 @@
 @baseUrl = http://localhost:52774/csp/healthshare/terminology/fhir/r4
 @username = superuser
 @password = SYS
+@valueSetId = 900000000000497000
 
 ### CapabilityStatement
 GET {{baseUrl}}/metadata
@@ -13,7 +14,7 @@ Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
 
 ### CodeSystem read by id
-GET {{baseUrl}}/CodeSystem/example
+GET {{baseUrl}}/CodeSystem/snomed
 Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
 
@@ -33,7 +34,7 @@ Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
 
 ### ValueSet read by id
-GET {{baseUrl}}/ValueSet/example
+GET {{baseUrl}}/ValueSet/{{valueSetId}}
 Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
 
@@ -51,4 +52,3 @@ Authorization: Basic {{username}}:{{password}}
 GET {{baseUrl}}/ValueSet?name=SNOMED
 Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
-

@@ -4,7 +4,26 @@ Class Terminology.Fhir.Interactions Extends HS.FHIRServer.Storage.JsonAdvSQL.Int
 
 Method Read(pResourceType As %String, pResourceId As %String, pVersionId As %String = "") As %DynamicObject
 {
-    // TODO
+    if pResourceType="CodeSystem" {
+        set tSC = ##class(Terminology.Core.TermService).%New().GetCodeSystemInfo(pResourceId, .info)
+        $$$ThrowOnError(tSC)
+
+        set resource = ##class(Terminology.Fhir.ResourceMapper).BuildCodeSystem(info)
+        if $IsObject(resource) {
+            quit resource
+        }
+    }
+    elseif pResourceType="ValueSet" {
+        set tSC = ##class(Terminology.Core.TermService).%New().GetValueSetInfo("snomed", pResourceId, .info)
+        $$$ThrowOnError(tSC)
+
+        set resource = ##class(Terminology.Fhir.ResourceMapper).BuildValueSet(info)
+        if $IsObject(resource) {
+            quit resource
+        }
+    }
+
+    quit ##super(pResourceType, pResourceId, pVersionId)
 }
 
 /// @API
@@ -30,6 +49,8 @@ Method Search(pResourceType As %String, pCompartment As %String, pCompartmentId 
     elseif pResourceType="ValueSet" {
         // TODO
     }
+
+    quit ##super(pResourceType, pCompartment, pCompartmentId, pParameters, .pSortKeys)
 }
 
 Method LoadMetadata() As %DynamicObject

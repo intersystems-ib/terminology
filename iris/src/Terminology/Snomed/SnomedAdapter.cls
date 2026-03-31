@@ -79,6 +79,51 @@ Method GetRefsetMembers(pRefsetId As %String = "", pReleaseId As %String = "", p
     Return ..GetRepository().GetRefsetMembers(pRefsetId, pReleaseId, pLang, pDialect, pLimit, pOffset, .pResult)
 }
 
+/// Returns a minimal neutral ValueSet view over a SNOMED reference set.
+Method GetValueSetInfo(pValueSetId As %String = "", pReleaseId As %String = "", Output pResult As Terminology.Core.DTO.ValueSetInfo) As %Status
+{
+    Set pResult = ##class(Terminology.Core.DTO.ValueSetInfo).%New()
+
+    If pValueSetId = "" {
+        Return $$$OK
+    }
+
+    Set tSC = ..GetRepository().RefsetExists(pValueSetId, pReleaseId, .exists)
+    $$$ThrowOnError(tSC)
+    If 'exists {
+        Return $$$OK
+    }
+
+    Set codeSystemInfo = ""
+    Set tSC = ##class(Terminology.Core.MetadataRepository).%New().GetCodeSystemInfo("http://snomed.info/sct", .codeSystemInfo)
+    $$$ThrowOnError(tSC)
+
+    Set defaultLang = ""
+    Set defaultDialect = ""
+    Set activeVersion = ""
+    Set conceptInfo = ""
+    If $IsObject(codeSystemInfo) {
+        Set defaultLang = codeSystemInfo.DefaultLang
+        Set defaultDialect = codeSystemInfo.DefaultDialect
+        Set activeVersion = codeSystemInfo.Version
+    }
+
+    Set lookupReleaseId = $Select(pReleaseId'="":pReleaseId, 1:activeVersion)
+    If (lookupReleaseId '= "") && (defaultLang '= "") && (defaultDialect '= "") {
+        Set tSC = ..LookupCode(pValueSetId, lookupReleaseId, defaultLang, defaultDialect, .conceptInfo)
+        $$$ThrowOnError(tSC)
+    }
+
+    Set pResult.Id = pValueSetId
+    Set pResult.Url = "http://snomed.info/sct?fhir_vs=refset/"_pValueSetId
+    Set pResult.Version = lookupReleaseId
+    Set pResult.Name = "SnomedRefset"_pValueSetId
+    Set pResult.Title = $Select($IsObject(conceptInfo) && (conceptInfo.PreferredTerm'=""):conceptInfo.PreferredTerm, 1:"")
+    Set pResult.Status = "active"
+    Set pResult.Description = $Select(pResult.Title'="":pResult.Title, 1:"SNOMED CT reference set "_pValueSetId)
+    Return $$$OK
+}
+
 /// Centralized repository creation keeps SQL access behind the adapter boundary.
 Method GetRepository() As Terminology.Snomed.SnomedRepository [ Private ]
 {
