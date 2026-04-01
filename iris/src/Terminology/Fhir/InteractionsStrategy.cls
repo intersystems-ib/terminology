@@ -1,5 +1,5 @@
 /// Wires the Terminology FHIR interactions into the server strategy.
-Class Terminology.Fhir.InteractionsStrategy Extends HS.FHIRServer.Storage.JsonAdvSQL.InteractionsStrategy
+Class Terminology.Fhir.InteractionsStrategy Extends HS.FHIRServer.Storage.Json.InteractionsStrategy
 {
 
 Parameter StrategyKey = "Terminology.Fhir";

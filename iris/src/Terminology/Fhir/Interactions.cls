@@ -1,5 +1,5 @@
 /// Base customization hook for the Terminology FHIR server.
-Class Terminology.Fhir.Interactions Extends HS.FHIRServer.Storage.JsonAdvSQL.Interactions
+Class Terminology.Fhir.Interactions Extends HS.FHIRServer.Storage.Json.Interactions
 {
 
 Parameter OperationHandlerClass = "Terminology.Fhir.Operations.TerminologyOperations";
