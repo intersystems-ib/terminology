@@ -10,6 +10,9 @@
 		}
 	],
 	"settings": {
-		"workbench.colorTheme": "InterSystems Default Dark Modern"
-	},
+		"workbench.colorTheme": "InterSystems Default Dark Modern",
+		"files.associations": {
+        	"iris.script": "objectscript"
+    	}
+	}
 }

@@ -11,6 +11,7 @@ XData ProductionDefinition
     <Setting Target="Host" Name="TargetConfigName">SnomedFileProcessing</Setting>
     <Setting Target="Host" Name="EffectiveDate">2026-03-19</Setting>
     <Setting Target="Host" Name="ReleaseId">SNOMED CT version 20260101</Setting>
+    <Setting Target="Adapter" Name="FileSpec">*.zip</Setting>
   </Item>
   <Item Name="SnomedFileProcessing" Category="" ClassName="Terminology.Production.BP.SnomedRf2Load" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="true" Schedule="">
     <Setting Target="Host" Name="TempDirectory">/iris-shared/tmp</Setting>
@@ -34,6 +35,7 @@ XData ProductionDefinition
     <Setting Target="Host" Name="TargetConfigName">SnomedFileProcessingBase</Setting>
     <Setting Target="Host" Name="EffectiveDate">2026-03-19</Setting>
     <Setting Target="Host" Name="ReleaseId">SNOMED CT version 20260101</Setting>
+    <Setting Target="Adapter" Name="FileSpec">*.zip</Setting>
   </Item>
 </Production>
 }

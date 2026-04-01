@@ -123,40 +123,40 @@ Precomputes the SNOMED hierarchy for fast navigation.
 
 ### Base Path
 
-/snomed
+/terminology/snomed
 
 ### Endpoints
 
 #### Search
 
-GET /snomed/search
+GET /terminology/snomed/search
 
 #### Concept
 
-GET /snomed/concepts/{conceptId}
+GET /terminology/snomed/concepts/{conceptId}
 
 #### Hierarchy
 
-GET /snomed/concepts/{conceptId}/children
-GET /snomed/concepts/{conceptId}/descendants
-GET /snomed/concepts/{conceptId}/ancestors
+GET /terminology/snomed/concepts/{conceptId}/children
+GET /terminology/snomed/concepts/{conceptId}/descendants
+GET /terminology/snomed/concepts/{conceptId}/ancestors
 
 #### Descriptions
 
-GET /snomed/concepts/{conceptId}/descriptions
+GET /terminology/snomed/concepts/{conceptId}/descriptions
 
 #### Subsumption
 
-GET /snomed/subsumes/{codeA}/{codeB}
+GET /terminology/snomed/subsumes/{codeA}/{codeB}
 
 #### Refsets
 
-GET /snomed/refsets
-GET /snomed/refsets/{refsetId}/members
+GET /terminology/snomed/refsets
+GET /terminology/snomed/refsets/{refsetId}/members
 
 #### Validation
 
-GET /snomed/validate-code
+GET /terminology/snomed/validate-code
 
 
 ---

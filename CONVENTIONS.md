@@ -135,7 +135,7 @@ When Codex creates or updates code, also update the relevant docs:
 ## Repository organization conventions
 
 - store manual `.http` request files used for developer API checks under `docs/http/`
-- keep request files grouped by API/domain with stable descriptive names such as `snomed.http` and `fhir-snomed.http`
+- keep request files grouped by API/domain with stable descriptive names such as `snomed-native.http` and `snomed-fhir-r4.http`
 - keep these files out of the repository root and out of `iris/src/` because they are developer support assets, not runtime code
 - add a short `README.md` in `docs/http/` only when shared setup details such as base URLs, auth or client-specific usage need to be explained
 

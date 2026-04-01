@@ -1,13 +1,25 @@
-zn "%SYS"
+ // unexpire passwords to use default IRIS users
+ zn "%SYS"
 
-do ##class(SYS.Container).QuiesceForBundling()
-do ##class(Security.Users).UnExpireUserPasswords("*")
+ do ##class(SYS.Container).QuiesceForBundling()
+ do ##class(Security.Users).UnExpireUserPasswords("*")
 
-zn "TERMINOLOGY"
+ zn "TERMINOLOGY"
 
-set sc = $SYSTEM.OBJ.LoadDir("/opt/irisapp/src/Terminology", "ck", , 1)
-set status = ##class(HS.FHIRServer.Installer).InteropAdapterConfig("/terminology/r5")
-set production = "Terminology.Production"
-set ^Ens.Configuration("csp","LastProduction") = production
-do ##class(Ens.Director).SetAutoStart(production)
-do ##class(Ens.Director).StartProduction(production)
+ // load source code
+ set sc = $SYSTEM.OBJ.LoadDir("/opt/irisapp/src/Terminology", "ck", , 1)
+ 
+ // install fhir server
+ set appKey = "/terminology/fhir/r4"
+ set strategyClass = "Terminology.Fhir.InteractionsStrategy"
+ set metadataPackages = $lb("hl7.fhir.r4.core@4.0.1")
+ set displayName = "Terminology FHIR Server"
+
+ //do ##class(HS.FHIRServer.Installer).InstallNamespace()
+ do ##class(HS.FHIRServer.Installer).InstallInstance(appKey, strategyClass, metadataPackages, "", "", 1, "", "", displayName)
+
+ // auto-start production
+ set production = "Terminology.Production"
+ set ^Ens.Configuration("csp","LastProduction") = production
+ do ##class(Ens.Director).SetAutoStart(production)
+ do ##class(Ens.Director).StartProduction(production)

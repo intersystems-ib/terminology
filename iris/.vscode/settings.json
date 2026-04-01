@@ -2,6 +2,6 @@
     "objectscript.conn": {
         "server": "docker",
         "ns": "TERMINOLOGY",
-        "active": true
+        "active": false
     }
 }
