@@ -1,258 +1,102 @@
-# Terminology Server (SNOMED CT on InterSystems IRIS)
+# Terminology Server on InterSystems IRIS
 
-## Overview
+This repository is a open source implementation of a terminology server built on InterSystems IRIS for Health.
 
-This project implements a terminology server based on **InterSystems IRIS for Health**, focused initially on **SNOMED CT**, with a scalable architecture designed to support additional terminologies (e.g., LOINC, ICD-10) in the future.
+The project is structured to evolve into a multi-terminology foundation and a practical example for developers.
 
-The system provides:
+## What This Repo Demonstrates
 
-- RF2 ingestion pipeline (base + extensions)
-- Terminology normalization and enrichment
-- Hierarchical reasoning (closure table)
-- REST API for terminology access
-- Integration with InterSystems Productions (BS/BP/BO pattern)
+- loading SNOMED CT RF2 releases into IRIS
+- combining base and extension content into one runtime dataset
+- building derived structures for fast search and hierarchy navigation
+- exposing native SNOMED-oriented REST endpoints
+- exposing an initial FHIR terminology surface over the same core behavior
+- organizing terminology logic so future code systems can be added without rewriting everything
 
----
+## Current Scope
 
-## Architecture
+Today the repository provides:
 
-The solution follows a layered architecture:
+- a working SNOMED CT ingestion pipeline
+- persistent source tables for concepts, descriptions, relationships and refset members
+- derived tables for preferred terms and hierarchical closure
+- a native REST API under `/terminology/snomed`
+- a FHIR R4 terminology surface under `/terminology/fhir/r4`
+- a first common service layer intended to support additional terminologies later
 
-REST API (CSP.REST)
-↓
-Business Service (Gateway)
-↓
-Business Operation (Repository)
-↓
-Database (Terminology tables)
+This is not yet a full enterprise terminology platform. It is a practical, working base that shows how to structure one on IRIS.
 
+## High-Level Flow
 
-### Components
+```text
+RF2 ZIP files
+    |
+    v
+Load / Build Pipeline
+    |
+    v
+SNOMED source tables + derived tables
+    |
+    +--> Native REST API
+    |
+    +--> FHIR Terminology API
+```
 
-- **API Layer**
-  - `Terminology.Production.API.SnomedApi`
-- **Gateway Service**
-  - `Terminology.Production.BS.SnomedGatewayService`
-- **Repository (BO)**
-  - `Terminology.Production.BO.SnomedRepositoryOperation`
-- **Processing (BP)**
-  - `Terminology.Production.BP.SnomedRf2Load`
+## Quick Start
 
----
+1. Build the image:
 
-## Data Model
+```bash
+docker compose build
+```
 
-### Core SNOMED Tables
+2. Start the stack:
 
-- `Terminology_Snomed.Concept`
-- `Terminology_Snomed.Description`
-- `Terminology_Snomed.Relationship`
-- `Terminology_Snomed.RefsetMember`
+```bash
+docker compose up -d
+```
 
-### Derived / Optimized Tables
+3. Copy the SNOMED CT International release ZIP to `iris/shared/baseIn/`.
 
-- `Terminology_Snomed.PreferredTerm`
-- `Terminology_Snomed.IsaClosure`
-- `Terminology_Snomed.PreferredTermStage`
-- `Terminology_Snomed.LanguageRefSetConfig`
+4. Copy a national extension ZIP, if used, to `iris/shared/in/`.
 
----
+5. Let the production process ingest the files and build the runtime structures.
 
-## RF2 Loader
+6. Optionally apply SQL tuning from `iris/shared/tune.sql`.
 
-### Features
+7. Verify the server using the HTTP examples under `docs/http/`.
 
-- Loads SNOMED CT **Snapshot** distributions
-- Supports:
-  - International base
-  - National extensions (e.g., Spanish)
-- Merges multiple sources into a single `ReleaseId`
-- Avoids data loss using `pClearRelease`
+For the full setup and verification flow, see [docs/getting-started.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/getting-started.md).
 
-### Performance Optimizations
+## Documentation Map
 
-- Prepared statement reuse
-- Row-based batched inserts
-- Avoidance of large parameter stacks
-- File discovery independent of folder structure
+- [ARCHITECTURE.md](/Users/afuentes/Documents/ISC/workspace/terminology/ARCHITECTURE.md): current implementation shape, runtime flow, target direction
+- [docs/getting-started.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/getting-started.md): build, start, load and verify the project
+- [docs/how-it-works.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/how-it-works.md): narrative walkthrough for developers new to the repo
+- [FHIR_SCOPE.md](/Users/afuentes/Documents/ISC/workspace/terminology/FHIR_SCOPE.md): current FHIR terminology scope and rollout approach
+- [CONVENTIONS.md](/Users/afuentes/Documents/ISC/workspace/terminology/CONVENTIONS.md): coding, layering and documentation rules
+- [docs/http/snomed-native.http](/Users/afuentes/Documents/ISC/workspace/terminology/docs/http/snomed-native.http): native API request examples
+- [docs/http/snomed-fhir-r4.http](/Users/afuentes/Documents/ISC/workspace/terminology/docs/http/snomed-fhir-r4.http): FHIR API request examples
+- [docs/sql/snomed-query-examples.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/sql/snomed-query-examples.md): direct SQL examples over the SNOMED model
 
----
+## Typical Developer Path
 
-## PreferredTerm Builder
+If you are new to the project, the shortest useful path is:
 
-### Purpose
+1. Read this file to understand the project boundary.
+2. Read [docs/getting-started.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/getting-started.md) and run the stack.
+3. Use the `.http` files in `docs/http/` to verify the native and FHIR endpoints.
+4. Read [docs/how-it-works.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/how-it-works.md) to understand the end-to-end lifecycle.
+5. Read [ARCHITECTURE.md](/Users/afuentes/Documents/ISC/workspace/terminology/ARCHITECTURE.md) before making structural changes.
+6. Read [CONVENTIONS.md](/Users/afuentes/Documents/ISC/workspace/terminology/CONVENTIONS.md) before contributing code.
 
-Creates a normalized table for fast lookup of preferred terms.
+## Reference Implementation Goal
 
-### Key Design
+The aim of this repository is not only to solve one internal SNOMED use case. It is to show developers a practical implementation pattern for:
 
-- Uses `Description + RefsetMember + Concept`
-- Language refset is **explicitly configured**
-- Two-phase process:
-  1. Populate `PreferredTermStage`
-  2. Insert into `PreferredTerm`
+- ingesting terminology content on IRIS
+- separating load, repository, service and API responsibilities
+- keeping terminology-specific logic isolated while introducing a shared service contract
+- exposing both native and FHIR-facing interfaces from the same underlying model
 
-### Optimizations
-
-- Eliminated nested queries
-- Eliminated correlated subqueries
-- Avoided joins during final insert
-- Logging at each step
-
----
-
-## ISA Closure Builder
-
-### Purpose
-
-Precomputes the SNOMED hierarchy for fast navigation.
-
-### Features
-
-- Supports:
-  - `inferred` and `stated` views
-- Uses memoization for performance
-- Stores:
-  - Ancestor
-  - Descendant
-  - Depth
-
----
-
-## REST API
-
-### Base Path
-
-/terminology/snomed
-
-### Endpoints
-
-#### Search
-
-GET /terminology/snomed/search
-
-#### Concept
-
-GET /terminology/snomed/concepts/{conceptId}
-
-#### Hierarchy
-
-GET /terminology/snomed/concepts/{conceptId}/children
-GET /terminology/snomed/concepts/{conceptId}/descendants
-GET /terminology/snomed/concepts/{conceptId}/ancestors
-
-#### Descriptions
-
-GET /terminology/snomed/concepts/{conceptId}/descriptions
-
-#### Subsumption
-
-GET /terminology/snomed/subsumes/{codeA}/{codeB}
-
-#### Refsets
-
-GET /terminology/snomed/refsets
-GET /terminology/snomed/refsets/{refsetId}/members
-
-#### Validation
-
-GET /terminology/snomed/validate-code
-
-
----
-
-## Query Design
-
-All repository queries:
-
-- Use dynamic SQL construction (`whereList`, `joinList`)
-- Avoid unnecessary joins
-- Use indexes (`%FIND` for search)
-- Apply filters only when parameters are present
-
----
-
-## Testing
-
-A test suite was implemented covering:
-
-- Search functionality
-- Concept lookup
-- Hierarchical navigation
-- Subsumption logic
-- Refset retrieval
-- Code validation
-
-### Validation Types
-
-- Functional correctness
-- Data consistency
-- Pagination
-- Edge cases
-
----
-
-## Performance Improvements
-
-Major optimizations applied:
-
-- Removed Python loops in builders
-- Replaced row-by-row SQL execution
-- Eliminated heavy joins in final stages
-- Introduced staging tables
-- Reused prepared statements
-- Avoided large argument stacks
-
----
-
-## Current Capabilities
-
-The system now supports:
-
-- Full SNOMED ingestion (base + extension)
-- Fast term lookup
-- Hierarchical reasoning
-- Subsumption checks
-- Refset navigation
-- Code validation
-
----
-
-## Next Steps
-
-Recommended future work:
-
-### Functional
-
-- Semantic search (vector embeddings)
-- Refset expansion logic
-- Concept relationships API
-
-### Standardization
-
-- FHIR Terminology API:
-  - `$lookup`
-  - `$subsumes`
-  - `$validate-code`
-  - `$expand`
-
-### Generalization
-
-- Introduce `Terminology.Core` model
-- Add support for:
-  - LOINC
-  - ICD-10
-  - RxNorm
-
----
-
-## Summary
-
-This project implements a production-ready SNOMED CT terminology server with:
-
-- Efficient RF2 ingestion
-- Optimized data model
-- Scalable architecture
-- Fully functional REST API
-
-It is designed to evolve into a multi-terminology, FHIR-compliant terminology platform.
+That is why the documentation is split into onboarding, architecture, scope and conventions instead of placing everything in a single technical summary.

@@ -1,8 +1,9 @@
 # Conventions
 
-## General development rule
+## General Development Rule
 
 Prefer:
+
 - small, explicit classes
 - stable names
 - thin API layer
@@ -11,12 +12,13 @@ Prefer:
 - short, meaningful descriptive comments on classes, methods and persistent properties when they help a developer understand intent quickly
 
 Avoid:
+
 - mixing API, business logic and SQL in the same class
 - "generic" abstractions with no immediate use
 - SNOMED assumptions inside common classes
 - redundant comments that only restate the code
 
-## Commenting conventions
+## Commenting Conventions
 
 Use short descriptive comments to improve readability and maintenance:
 
@@ -26,9 +28,10 @@ Use short descriptive comments to improve readability and maintenance:
 - keep comments brief and focused on intent, behavior or persistence semantics
 - prefer comments that help another developer understand why the code exists or how it should be used
 
-## Naming conventions
+## Naming Conventions
 
 ### Packages
+
 Use stable package names based on responsibility:
 
 - `Terminology.Core.*`
@@ -37,7 +40,8 @@ Use stable package names based on responsibility:
 - `Terminology.Loinc.*`
 - `Terminology.Mapping.*`
 
-### Class naming
+### Class Naming
+
 Use class names that make responsibility obvious:
 
 - `...Api`
@@ -48,56 +52,67 @@ Use class names that make responsibility obvious:
 - `...BuildService`
 
 Examples:
+
 - `Terminology.Fhir.CodeSystemApi`
 - `Terminology.Core.TermService`
 - `Terminology.Snomed.SnomedAdapter`
 - `Terminology.Snomed.SnomedRepository`
 
-## Layering rules
+## Layering Rules
 
-### API layer
+### API Layer
+
 Responsibilities:
+
 - request parsing
 - response shaping
 - error mapping
 - calling services
 
 Must not:
+
 - build SQL
 - know table internals
 - contain terminology-specific branching unless it is the terminology-specific API itself
 
-### Service layer
+### Service Layer
+
 Responsibilities:
+
 - business orchestration
 - terminology routing
 - common operation contracts
 - validation of input semantics
 
-### Repository layer
+### Repository Layer
+
 Responsibilities:
+
 - SQL
 - result mapping
 - persistence access
 - IRIS-specific optimization
 
-### Load/build layer
+### Load / Build Layer
+
 Responsibilities:
+
 - loading source files
 - staging / normalization
 - derived table generation
 - release/version tracking
 
-## SQL conventions
+## SQL Conventions
 
-- Put SQL access in repository classes only
-- Prefer explicit methods per use case
-- Comment non-trivial joins
-- Document what each query returns
-- Document expected indexes or performance assumptions
-- Keep one query per clear business purpose
+- put SQL access in repository classes only
+- prefer explicit methods per use case
+- comment non-trivial joins
+- document what each query returns
+- document expected indexes or performance assumptions
+- keep one query per clear business purpose
 
 Examples of acceptable repository methods:
+
 - `GetConceptByCode`
 - `GetPreferredTermsByConcept`
 - `GetChildren`
@@ -106,7 +121,7 @@ Examples of acceptable repository methods:
 - `CodeExistsAndActive`
 - `SearchDescriptions`
 
-## FHIR conventions
+## FHIR Conventions
 
 - FHIR classes must use common terminology service contracts
 - FHIR endpoint code must not directly read SNOMED tables
@@ -124,50 +139,63 @@ Examples of acceptable repository methods:
   - each operation-specific class owns its FHIR dispatch methods and helper methods
   - the aggregator class wires the operation classes together and normalizes hyphenated operation names for dispatch when needed
 
-## Documentation conventions
+## Documentation Conventions
 
-When Codex creates or updates code, also update the relevant docs:
-- architecture changes -> `ARCHITECTURE.md`
-- scope changes -> `FHIR_SCOPE.md`
-- roadmap changes -> `ROADMAP.md`
+Documentation is part of the implementation, especially because this repository is intended to be a partner-facing reference.
+
+When code or behavior changes, update the relevant docs:
+
+- architecture changes -> [ARCHITECTURE.md](/Users/afuentes/Documents/ISC/workspace/terminology/ARCHITECTURE.md)
+- setup or operational workflow changes -> [docs/getting-started.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/getting-started.md)
+- onboarding or scope changes -> [README.md](/Users/afuentes/Documents/ISC/workspace/terminology/README.md)
+- FHIR scope changes -> [FHIR_SCOPE.md](/Users/afuentes/Documents/ISC/workspace/terminology/FHIR_SCOPE.md)
 - unresolved design issues -> `docs/open-questions.md`
 
-## Repository organization conventions
+Diagram placement rule:
+
+- put small overview diagrams in the README
+- put implementation and data-flow diagrams in the architecture docs
+
+## Repository Organization Conventions
 
 - store manual `.http` request files used for developer API checks under `docs/http/`
 - keep request files grouped by API/domain with stable descriptive names such as `snomed-native.http` and `snomed-fhir-r4.http`
 - keep these files out of the repository root and out of `iris/src/` because they are developer support assets, not runtime code
 - add a short `README.md` in `docs/http/` only when shared setup details such as base URLs, auth or client-specific usage need to be explained
 
-## Testing conventions
+## Testing Conventions
 
 For each important capability, aim for:
+
 - 1 happy path
 - 1 invalid input case
 - 1 not found/inactive case
 - 1 language/version-sensitive case where relevant
 
 Priority test areas:
+
 - lookup
 - validate-code
 - subsumes
 - search
 - preferred term selection
 
-## Commit conventions
+## Commit Conventions
 
 Prefer small commits with clear intent:
+
 - `docs: map current SNOMED query flow`
 - `refactor: isolate subsumes SQL in repository`
 - `feat: add FHIR lookup service contract`
 - `test: add lookup and validate-code cases`
 
-## Instructions for Codex
+## Instructions For Codex
 
 When asked to change code:
-1. read `ARCHITECTURE.md`
-2. read `CONVENTIONS.md`
-3. read `FHIR_SCOPE.md` if the change touches FHIR
+
+1. read [ARCHITECTURE.md](/Users/afuentes/Documents/ISC/workspace/terminology/ARCHITECTURE.md)
+2. read [CONVENTIONS.md](/Users/afuentes/Documents/ISC/workspace/terminology/CONVENTIONS.md)
+3. read [FHIR_SCOPE.md](/Users/afuentes/Documents/ISC/workspace/terminology/FHIR_SCOPE.md) if the change touches FHIR
 4. avoid broad refactors unless requested
 5. explain assumptions in comments or docs
 6. preserve current working SNOMED behavior unless explicitly changing it
