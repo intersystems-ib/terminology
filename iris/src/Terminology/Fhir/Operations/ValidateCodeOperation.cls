@@ -1,5 +1,5 @@
 /// Implements the CodeSystem/$validate-code FHIR operation for the terminology server.
-Class Terminology.Fhir.ValidateCodeOperation Extends HS.FHIRServer.API.OperationHandler
+Class Terminology.Fhir.Operations.ValidateCodeOperation Extends HS.FHIRServer.API.OperationHandler
 {
 
 /// Preserves built-in operations and registers CodeSystem/$validate-code.
@@ -33,7 +33,7 @@ ClassMethod ProcessCodeSystemValidateCode(pService As HS.FHIRServer.API.Service,
     Set tSC = ..ParseValidateCodeInputs(pRequest, .inputs)
     $$$ThrowOnError(tSC)
 
-    Set tSC = ##class(Terminology.Fhir.LookupOperation).ResolveLookupContext(pResourceId, inputs.system, inputs.version, "", .context)
+    Set tSC = ##class(Terminology.Fhir.Operations.LookupOperation).ResolveLookupContext(pResourceId, inputs.system, inputs.version, "", .context)
     $$$ThrowOnError(tSC)
 
     If inputs.code = "" {
@@ -117,10 +117,10 @@ ClassMethod BuildValidateCodeResponse(pInputs As %DynamicObject, pValidation As 
     Do response.%Set("resourceType", "Parameters")
     Do response.%Set("parameter", parameters)
     Do parameters.%Push(..BuildBooleanParameter("result", result))
-    Do parameters.%Push(##class(Terminology.Fhir.LookupOperation).BuildStringParameter("message", message))
+    Do parameters.%Push(##class(Terminology.Fhir.Operations.LookupOperation).BuildStringParameter("message", message))
 
     If pInputs.%Get("display") '= "" {
-        Do parameters.%Push(##class(Terminology.Fhir.LookupOperation).BuildStringParameter("display", pInputs.%Get("display")))
+        Do parameters.%Push(##class(Terminology.Fhir.Operations.LookupOperation).BuildStringParameter("display", pInputs.%Get("display")))
     }
 
     Quit response

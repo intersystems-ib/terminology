@@ -2,7 +2,7 @@
 Class Terminology.Fhir.Interactions Extends HS.FHIRServer.Storage.JsonAdvSQL.Interactions
 {
 
-Parameter OperationHandlerClass = "Terminology.Fhir.TerminologyOperations";
+Parameter OperationHandlerClass = "Terminology.Fhir.Operations.TerminologyOperations";
 
 Method Read(pResourceType As %String, pResourceId As %String, pVersionId As %String = "") As %DynamicObject
 {

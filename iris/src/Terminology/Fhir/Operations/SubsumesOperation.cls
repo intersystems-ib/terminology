@@ -1,5 +1,5 @@
 /// Implements the CodeSystem/$subsumes FHIR operation for the terminology server.
-Class Terminology.Fhir.SubsumesOperation Extends HS.FHIRServer.API.OperationHandler
+Class Terminology.Fhir.Operations.SubsumesOperation Extends HS.FHIRServer.API.OperationHandler
 {
 
 /// Preserves built-in operations and registers CodeSystem/$subsumes.
@@ -33,7 +33,7 @@ ClassMethod ProcessCodeSystemSubsumes(pService As HS.FHIRServer.API.Service, pRe
     Set tSC = ..ParseSubsumesInputs(pRequest, .inputs)
     $$$ThrowOnError(tSC)
 
-    Set tSC = ##class(Terminology.Fhir.LookupOperation).ResolveLookupContext(pResourceId, inputs.system, inputs.version, "", .context)
+    Set tSC = ##class(Terminology.Fhir.Operations.LookupOperation).ResolveLookupContext(pResourceId, inputs.system, inputs.version, "", .context)
     $$$ThrowOnError(tSC)
 
     If (inputs.codeA = "") || (inputs.codeB = "") {
@@ -90,7 +90,7 @@ ClassMethod BuildSubsumesResponse(pResult As Terminology.Snomed.DTO.SubsumesResu
 
     Do response.%Set("resourceType", "Parameters")
     Do response.%Set("parameter", parameters)
-    Do parameters.%Push(##class(Terminology.Fhir.LookupOperation).BuildStringParameter("outcome", pResult.Relationship))
+    Do parameters.%Push(##class(Terminology.Fhir.Operations.LookupOperation).BuildStringParameter("outcome", pResult.Relationship))
 
     Quit response
 }

@@ -117,8 +117,8 @@ Examples of acceptable repository methods:
   - `$expand`
   - `$translate`
 - custom FHIR operation classes should inherit from `HS.FHIRServer.API.OperationHandler`
-- custom IRIS FHIR operations should be implemented in operation-specific classes such as `Terminology.Fhir.LookupOperation`
-- `Terminology.Fhir.TerminologyOperations` should act as the aggregator class wired into `OperationHandlerClass`
+- custom IRIS FHIR operations should be implemented in operation-specific classes such as `Terminology.Fhir.Operations.LookupOperation`
+- `Terminology.Fhir.Operations.TerminologyOperations` should act as the aggregator class wired into `OperationHandlerClass`
 - follow the InterSystems custom operation extension chain pattern:
   - each operation-specific class owns a single FHIR operation where practical
   - each operation-specific class owns its FHIR dispatch methods and helper methods

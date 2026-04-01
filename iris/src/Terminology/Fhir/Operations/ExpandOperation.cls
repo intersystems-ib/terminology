@@ -1,5 +1,5 @@
 /// Implements the ValueSet/$expand FHIR operation for the terminology server.
-Class Terminology.Fhir.ExpandOperation Extends HS.FHIRServer.API.OperationHandler
+Class Terminology.Fhir.Operations.ExpandOperation Extends HS.FHIRServer.API.OperationHandler
 {
 
 /// Preserves built-in operations and registers ValueSet/$expand.
