@@ -124,11 +124,10 @@ This is useful when you want to inspect the stored SNOMED and derived data direc
 
 ## Run Unit Tests
 
-The repository includes an initial `%UnitTest` suite for the native SNOMED API and the shared SNOMED service path.
-
-Current suite:
+The repository includes initial `%UnitTest` suites for:
 
 - `Terminology.Tests.Snomed.*`
+- `Terminology.Tests.Fhir.R4.*`
 
 Notes:
 
@@ -148,15 +147,23 @@ If you change test files while the container is already running, copy the update
 docker cp iris/tests/ iris:/opt/irisapp
 ```
 
-Switch to the terminology namespace and run the suite:
+Switch to the terminology namespace and run a suite:
 
 ```objectscript
 zn "TERMINOLOGY"
 set ^UnitTestRoot = "/opt/irisapp/tests"
-do ##class(%UnitTest.Manager).RunTest("snomed", "/nodelete")
+do ##class(%UnitTest.Manager).RunTest("<suite>", "/nodelete")
 ```
 
-This runs all tests found under `iris/tests/snomed`.
+Use:
+
+- `snomed` to run all tests under `iris/tests/snomed`
+- `fhir` to run all tests under `iris/tests/fhir`
+- no suite argument to run all tests:
+
+```objectscript
+do ##class(%UnitTest.Manager).RunTest(, "/nodelete")
+```
 
 The `/nodelete` flag is useful during development because it keeps the loaded test classes available after the run.
 

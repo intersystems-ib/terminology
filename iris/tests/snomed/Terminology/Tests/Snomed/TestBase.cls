@@ -16,7 +16,7 @@ Parameter ChildDescriptionId = 200000000002;
 
 Parameter InactiveDescriptionId = 200000000003;
 
-Parameter RefsetId = 900000000001;
+Parameter RefsetId = 199000000001;
 
 /// Seeds a minimal release-scoped SNOMED dataset for the native API and service tests.
 Method OnBeforeAllTests() As %Status
