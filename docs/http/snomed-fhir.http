@@ -54,6 +54,21 @@ GET {{baseUrl}}/CodeSystem/snomed/$validate-code?code={{conceptCode}}
 Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
 
+### CodeSystem $subsumes by code pair
+GET {{baseUrl}}/CodeSystem/$subsumes?system=http://snomed.info/sct&codeA={{conceptCode}}&codeB=404684003
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem $subsumes equivalent example
+GET {{baseUrl}}/CodeSystem/$subsumes?system=http://snomed.info/sct&codeA={{conceptCode}}&codeB={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem instance $subsumes by code pair
+GET {{baseUrl}}/CodeSystem/snomed/$subsumes?codeA=404684003&codeB={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
 ### ValueSet read by id
 GET {{baseUrl}}/ValueSet/{{valueSetId}}
 Accept: application/fhir+json

@@ -1,5 +1,5 @@
 /// Aggregates terminology-specific FHIR operation classes for the server strategy.
-Class Terminology.Fhir.TerminologyOperations Extends (Terminology.Fhir.LookupOperation, Terminology.Fhir.ValidateCodeOperation)
+Class Terminology.Fhir.TerminologyOperations Extends (Terminology.Fhir.LookupOperation, Terminology.Fhir.ValidateCodeOperation, Terminology.Fhir.SubsumesOperation)
 {
 
 /// Enumerates the operations supported by this terminology server operation chain.
@@ -7,6 +7,7 @@ ClassMethod AddSupportedOperations(pMap As %DynamicObject)
 {
     Do ##class(Terminology.Fhir.LookupOperation).AddSupportedOperations(pMap)
     Do ##class(Terminology.Fhir.ValidateCodeOperation).AddSupportedOperations(pMap)
+    Do ##class(Terminology.Fhir.SubsumesOperation).AddSupportedOperations(pMap)
 }
 
 /// @API

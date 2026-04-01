@@ -62,6 +62,7 @@ Method GetMetadataResource() As %DynamicObject
     set codeSystem.operation = []
     do codeSystem.operation.%Push({"name":"lookup","definition":"http://hl7.org/fhir/OperationDefinition/CodeSystem-lookup"})
     do codeSystem.operation.%Push({"name":"validate-code","definition":"http://hl7.org/fhir/OperationDefinition/CodeSystem-validate-code"})
+    do codeSystem.operation.%Push({"name":"subsumes","definition":"http://hl7.org/fhir/OperationDefinition/CodeSystem-subsumes"})
     do resources.%Push(codeSystem)
 
     set valueSet = {}
