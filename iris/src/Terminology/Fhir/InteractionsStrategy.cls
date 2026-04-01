@@ -75,6 +75,8 @@ Method GetMetadataResource() As %DynamicObject
     do valueSet.searchParam.%Push({"name":"_id","type":"token"})
     do valueSet.searchParam.%Push({"name":"name","type":"string"})
     do valueSet.searchParam.%Push({"name":"version","type":"token"})
+    set valueSet.operation = []
+    do valueSet.operation.%Push({"name":"expand","definition":"http://hl7.org/fhir/OperationDefinition/ValueSet-expand"})
     do resources.%Push(valueSet)
 
     set rest.resource = resources

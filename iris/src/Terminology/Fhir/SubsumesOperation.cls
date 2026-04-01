@@ -1,5 +1,5 @@
 /// Implements the CodeSystem/$subsumes FHIR operation for the terminology server.
-Class Terminology.Fhir.SubsumesOperation Extends HS.FHIRServer.Storage.BuiltInOperations
+Class Terminology.Fhir.SubsumesOperation Extends HS.FHIRServer.API.OperationHandler
 {
 
 /// Preserves built-in operations and registers CodeSystem/$subsumes.

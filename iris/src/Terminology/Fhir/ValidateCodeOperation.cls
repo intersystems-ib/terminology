@@ -1,5 +1,5 @@
 /// Implements the CodeSystem/$validate-code FHIR operation for the terminology server.
-Class Terminology.Fhir.ValidateCodeOperation Extends HS.FHIRServer.Storage.BuiltInOperations
+Class Terminology.Fhir.ValidateCodeOperation Extends HS.FHIRServer.API.OperationHandler
 {
 
 /// Preserves built-in operations and registers CodeSystem/$validate-code.

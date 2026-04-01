@@ -74,6 +74,16 @@ GET {{baseUrl}}/ValueSet/{{valueSetId}}
 Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
 
+### ValueSet $expand by id
+GET {{baseUrl}}/ValueSet/{{valueSetId}}/$expand?displayLanguage=es&count=10&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by url
+GET {{baseUrl}}/ValueSet/$expand?url=http://snomed.info/sct?fhir_vs=refset/{{valueSetId}}&displayLanguage=es&count=10&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
 ### ValueSet search
 GET {{baseUrl}}/ValueSet
 Accept: application/fhir+json

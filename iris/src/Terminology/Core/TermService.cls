@@ -110,6 +110,22 @@ Method SearchValueSets(pSystem As %String = "snomed", pUrl As %String = "", pId 
     Return ..ResolveAdapter(pSystem).SearchValueSets(pUrl, pId, pName, pVersion, .pResult)
 }
 
+/// Returns minimal value set metadata and members for the current SNOMED-backed FHIR expand MVP.
+Method ExpandValueSet(pSystem As %String = "snomed", pValueSetId As %String = "", pVersion As %String = "", pLang As %String = "", pDialect As %String = "", pCount As %Integer = 100, pOffset As %Integer = 0, Output pInfo As Terminology.Core.DTO.ValueSetInfo, Output pMembers As Terminology.Snomed.DTO.RefsetMemberListResult) As %Status
+{
+    Set pInfo = ##class(Terminology.Core.DTO.ValueSetInfo).%New()
+    Set pMembers = ##class(Terminology.Snomed.DTO.RefsetMemberListResult).%New()
+
+    Set tSC = ..ResolveAdapter(pSystem).GetValueSetInfo(pValueSetId, pVersion, .pInfo)
+    $$$ThrowOnError(tSC)
+
+    If '$IsObject(pInfo) || (pInfo.Id = "") {
+        Return $$$OK
+    }
+
+    Return ..ResolveAdapter(pSystem).GetRefsetMembers(pValueSetId, pInfo.Version, pLang, pDialect, pCount, pOffset, .pMembers)
+}
+
 /// Explicit adapter resolution keeps the current implementation simple while making
 /// the routing point obvious for future terminologies.
 Method ResolveAdapter(pSystem As %String = "snomed") As Terminology.Snomed.SnomedAdapter [ Private ]

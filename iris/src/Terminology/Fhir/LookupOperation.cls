@@ -1,5 +1,5 @@
 /// Implements the CodeSystem/$lookup FHIR operation for the terminology server.
-Class Terminology.Fhir.LookupOperation Extends HS.FHIRServer.Storage.BuiltInOperations
+Class Terminology.Fhir.LookupOperation Extends HS.FHIRServer.API.OperationHandler
 {
 
 /// Preserves built-in operations and registers CodeSystem/$lookup.
