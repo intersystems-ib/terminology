@@ -24,13 +24,6 @@ Method GetCodeSystemInfo(pSystemUri As %String = "", Output pResult As Terminolo
             Set pResult.Description = rset.%Get("Notes")
             Set pResult.DefaultLang = rset.%Get("DefaultLang")
             Set pResult.DefaultDialect = rset.%Get("DefaultDialect")
-        } ElseIf pSystemUri = "http://snomed.info/sct" {
-            Set pResult.Url = pSystemUri
-            Set pResult.Name = "SNOMEDCT"
-            Set pResult.Title = "SNOMED CT"
-            Set pResult.Description = "SNOMED CT code system"
-            Set pResult.DefaultLang = "es"
-            Set pResult.DefaultDialect = "es-ES"
         } Else {
             Return $$$OK
         }
@@ -44,7 +37,7 @@ Method GetCodeSystemInfo(pSystemUri As %String = "", Output pResult As Terminolo
 
         Set rset = stmt.%Execute(pSystemUri)
         If rset.%Next() {
-            Set pResult.Version = $Select(rset.%Get("ReleaseId")'="":rset.%Get("ReleaseId"), 1:rset.%Get("VersionUri"))
+            Set pResult.Version = $Select(rset.%Get("VersionUri")'="":rset.%Get("VersionUri"), 1:rset.%Get("ReleaseId"))
             Set pResult.Status = "active"
         }
 
@@ -74,8 +67,16 @@ Method SearchCodeSystems(pUrl As %String = "", pName As %String = "", Output pRe
         Set endSQL = "ORDER BY cs.SystemUri"
 
         If pUrl '= "" {
-            Set whereList = whereList_$ListBuild("cs.SystemUri = ?")
-            Do ..AddArgument(.args, .argCount, pUrl)
+            Set normalizedUrl = $ZSTRIP(pUrl, "<>W")
+            Set normalizedNoSlash = normalizedUrl
+            If ($EXTRACT(normalizedNoSlash, *) = "/") {
+                Set normalizedNoSlash = $EXTRACT(normalizedNoSlash, 1, *-1)
+            }
+            Set normalizedWithSlash = normalizedNoSlash_"/"
+
+            Set whereList = whereList_$ListBuild("(%SQLUPPER(cs.SystemUri) = %SQLUPPER(?) OR %SQLUPPER(cs.SystemUri) = %SQLUPPER(?))")
+            Do ..AddArgument(.args, .argCount, normalizedNoSlash)
+            Do ..AddArgument(.args, .argCount, normalizedWithSlash)
         }
 
         If pName '= "" {
@@ -95,39 +96,10 @@ Method SearchCodeSystems(pUrl As %String = "", pName As %String = "", Output pRe
             Set item.Description = rset.%Get("Notes")
             Set item.DefaultLang = rset.%Get("DefaultLang")
             Set item.DefaultDialect = rset.%Get("DefaultDialect")
-            Set item.Version = $Select(rset.%Get("ReleaseId")'="":rset.%Get("ReleaseId"), 1:rset.%Get("VersionUri"))
+            Set item.Version = $Select(rset.%Get("VersionUri")'="":rset.%Get("VersionUri"), 1:rset.%Get("ReleaseId"))
             Set item.Status = $Select(item.Version'="":"active", 1:"draft")
             Set item.Content = "not-present"
             Do pResult.Items.Insert(item)
-        }
-
-        If ('..ContainsCodeSystemUrl(pResult, "http://snomed.info/sct")) && ((pUrl = "") || (pUrl = "http://snomed.info/sct")) {
-            Set item = ##class(Terminology.Core.DTO.CodeSystemInfo).%New()
-            Set item.Url = "http://snomed.info/sct"
-            Set item.Name = "SNOMEDCT"
-            Set item.Title = "SNOMED CT"
-            Set item.Description = "SNOMED CT code system"
-            Set item.Content = "not-present"
-            Set item.Status = "draft"
-
-            Set tSC = ..GetCodeSystemInfo(item.Url, .fallbackInfo)
-            $$$ThrowOnError(tSC)
-            If $IsObject(fallbackInfo) {
-                If fallbackInfo.Version '= "" {
-                    Set item.Version = fallbackInfo.Version
-                    Set item.Status = fallbackInfo.Status
-                }
-                If fallbackInfo.DefaultLang '= "" {
-                    Set item.DefaultLang = fallbackInfo.DefaultLang
-                }
-                If fallbackInfo.DefaultDialect '= "" {
-                    Set item.DefaultDialect = fallbackInfo.DefaultDialect
-                }
-            }
-
-            If (pName = "") || ($ZCONVERT(item.Name, "L") = $ZCONVERT(pName, "L")) {
-                Do pResult.Items.Insert(item)
-            }
         }
 
         Set pResult.Count = $Select($IsObject(pResult.Items):pResult.Items.Count(), 1:0)
@@ -135,22 +107,6 @@ Method SearchCodeSystems(pUrl As %String = "", pName As %String = "", Output pRe
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
-}
-
-Method ContainsCodeSystemUrl(pResult As Terminology.Core.DTO.CodeSystemListResult, pUrl As %String) As %Boolean [ Private ]
-{
-    If '$IsObject(pResult) {
-        return 0
-    }
-
-    For index=1:1:pResult.Items.Count() {
-        Set item = pResult.Items.GetAt(index)
-        If $IsObject(item) && (item.Url = pUrl) {
-            return 1
-        }
-    }
-
-    return 0
 }
 
 Method AddArgument(ByRef pArgs, ByRef pArgCount, pValue As %String) [ Private ]

@@ -62,8 +62,12 @@ Method GetValueSetInfo(pSystem As %String = "snomed", pId As %String = "", Outpu
 Method SearchCodeSystems(pUrl As %String = "", pId As %String = "", pName As %String = "", pVersion As %String = "", Output pResult As Terminology.Core.DTO.CodeSystemListResult) As %Status
 {
     Set pResult = ##class(Terminology.Core.DTO.CodeSystemListResult).%New()
+    Set normalizedUrl = ..NormalizeCodeSystemUrl(pUrl)
+    Set normalizedName = $ZCONVERT($ZSTRIP(pName, "<>W"), "L")
 
-    Set tSC = ##class(Terminology.Core.MetadataRepository).%New().SearchCodeSystems(pUrl, pName, .searchResult)
+    // Keep repository query broad and apply normalized filtering here so FHIR parameter
+    // encoding/casing variants do not accidentally drop SNOMED metadata rows.
+    Set tSC = ##class(Terminology.Core.MetadataRepository).%New().SearchCodeSystems("", "", .searchResult)
     $$$ThrowOnError(tSC)
 
     If '$IsObject(searchResult) {
@@ -73,6 +77,14 @@ Method SearchCodeSystems(pUrl As %String = "", pId As %String = "", pName As %St
     For index=1:1:searchResult.Items.Count() {
         Set item = searchResult.Items.GetAt(index)
         If '$IsObject(item) {
+            Continue
+        }
+
+        If (normalizedUrl '= "") && (..NormalizeCodeSystemUrl(item.Url) '= normalizedUrl) {
+            Continue
+        }
+
+        If (normalizedName '= "") && ($ZCONVERT($ZSTRIP(item.Name, "<>W"), "L") '= normalizedName) {
             Continue
         }
 
@@ -151,11 +163,39 @@ Method BuildCodeSystemId(pSystemUri As %String = "") As %String [ Private ]
 /// Resolves the current MVP FHIR logical id to a code system canonical url.
 Method ResolveCodeSystemUri(pId As %String = "") As %String [ Private ]
 {
-    If (pId = "") || ($ZCONVERT(pId, "L") = "snomed") || (pId = "http://snomed.info/sct") {
+    Set normalized = ..NormalizeCodeSystemUrl(pId)
+    If (normalized = "") || ($ZCONVERT(normalized, "L") = "snomed") || ($ZCONVERT(normalized, "L") = "http://snomed.info/sct") {
         Quit "http://snomed.info/sct"
     }
 
     Quit ""
+}
+
+Method NormalizeCodeSystemUrl(pValue As %String = "") As %String [ Private ]
+{
+    Set normalized = $ZSTRIP(pValue, "<>W")
+
+    If normalized = "" {
+        Return ""
+    }
+
+    If $Find(normalized, "|") {
+        Set normalized = $Piece(normalized, "|", 1)
+    }
+
+    If ($Extract(normalized, *) = "/") {
+        Set normalized = $Extract(normalized, 1, *-1)
+    }
+
+    If $ZCONVERT(normalized, "L") = "http://snomed.info/sct" {
+        Return "http://snomed.info/sct"
+    }
+
+    If $ZCONVERT(normalized, "L") = "snomed" {
+        Return "snomed"
+    }
+
+    Return normalized
 }
 
 }

@@ -17,6 +17,31 @@ Method TestMetadataAndCodeSystemRead() As %Status
     Return $$$OK
 }
 
+/// Verifies CodeSystem search by canonical url and name.
+Method TestCodeSystemSearchFilters() As %Status
+{
+    Set tSC = ..InvokeFhirApi("/CodeSystem?url=http://snomed.info/sct", .searchByUrlResponse, .httpStatus)
+    Do ..AssertStatusOKViaMacro("", tSC, "FHIR CodeSystem search by url invocation returns OK")
+    Do ..AssertEqualsViaMacro("", searchByUrlResponse.%Get("resourceType"), "Bundle", "CodeSystem search by url returns a Bundle")
+    Do ..AssertEqualsViaMacro("", searchByUrlResponse.%Get("total"), 1, "CodeSystem search by url returns one resource")
+    Set entry = searchByUrlResponse.%Get("entry")
+    Set firstMatch = entry.%Get(0).%Get("resource")
+    Do ..AssertEqualsViaMacro("", firstMatch.%Get("resourceType"), "CodeSystem", "CodeSystem search by url returns a CodeSystem")
+    Do ..AssertEqualsViaMacro("", firstMatch.%Get("id"), "snomed", "CodeSystem search by url returns the SNOMED logical id")
+    Do ..AssertEqualsViaMacro("", firstMatch.%Get("url"), "http://snomed.info/sct", "CodeSystem search by url returns the SNOMED canonical url")
+
+    Set tSC = ..InvokeFhirApi("/CodeSystem?name=SNOMEDCT", .searchByNameResponse, .httpStatus)
+    Do ..AssertStatusOKViaMacro("", tSC, "FHIR CodeSystem search by name invocation returns OK")
+    Do ..AssertEqualsViaMacro("", searchByNameResponse.%Get("resourceType"), "Bundle", "CodeSystem search by name returns a Bundle")
+    Do ..AssertEqualsViaMacro("", searchByNameResponse.%Get("total"), 1, "CodeSystem search by name returns one resource")
+    Set entry = searchByNameResponse.%Get("entry")
+    Set firstMatch = entry.%Get(0).%Get("resource")
+    Do ..AssertEqualsViaMacro("", firstMatch.%Get("resourceType"), "CodeSystem", "CodeSystem search by name returns a CodeSystem")
+    Do ..AssertEqualsViaMacro("", firstMatch.%Get("id"), "snomed", "CodeSystem search by name returns the SNOMED logical id")
+    Do ..AssertEqualsViaMacro("", firstMatch.%Get("url"), "http://snomed.info/sct", "CodeSystem search by name returns the SNOMED canonical url")
+    Return $$$OK
+}
+
 /// Verifies CodeSystem lookup, validate-code and subsumes operations over HTTP.
 Method TestCodeSystemOperations() As %Status
 {

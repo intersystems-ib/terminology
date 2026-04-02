@@ -7,9 +7,13 @@
 - FHIR:
   Implement `TerminologyCapabilities`.
 
-- SNOMED load metadata:
-  Check whether load should populate these correctly:
+- SNOMED metadata follow-up:
+  metadata tables are now populated during load:
   `Terminology.Core.CodeSystem`, `Terminology.Core.VersionRelease`, `Terminology.Core.LicenseNotice`.
+  remaining decisions:
+  keep one runtime `ReleaseId` for composed INT+ES snapshots vs split runtime partitions.
+  derive edition SCTID automatically from loaded package/module metadata to build standards-based `VersionUri`.
+  decide whether `LicenseNotice` should be system-level only or version-specific.
 
 - LOINC:
   LOINC will be the next terminology to support.

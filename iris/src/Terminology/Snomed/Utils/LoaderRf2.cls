@@ -11,6 +11,7 @@ ClassMethod LoadSnapshotPy(pDir As %String, pReleaseId As %String, pSystemUri As
 import os
 import glob
 import json
+import re
 import iris
 
 _stmt_cache = {}
@@ -109,7 +110,107 @@ def flush_rows(stmt, rows, context="", progress_label="", counter_state=None):
 
     rows.clear()
 
+def ensure_code_system(system_uri):
+    default_name = "SNOMEDCT"
+    default_lang = "es"
+    default_dialect = "es-ES"
+    default_notes = "SNOMED CT code system"
+
+    if exists_sql(
+        "SELECT SystemUri FROM Terminology_Core.CodeSystem WHERE SystemUri = ?",
+        system_uri,
+        context="check_codesystem_exists"
+    ):
+        execute_non_query(
+            "UPDATE Terminology_Core.CodeSystem "
+            "SET Name = ?, DefaultLang = ?, DefaultDialect = ?, Notes = ? "
+            "WHERE SystemUri = ?",
+            default_name,
+            default_lang,
+            default_dialect,
+            default_notes,
+            system_uri,
+            context="update_codesystem"
+        )
+    else:
+        execute_non_query(
+            "INSERT INTO Terminology_Core.CodeSystem "
+            "(SystemUri, Name, DefaultLang, DefaultDialect, Notes) "
+            "SELECT ?, ?, ?, ?, ?",
+            system_uri,
+            default_name,
+            default_lang,
+            default_dialect,
+            default_notes,
+            context="insert_codesystem"
+        )
+
+def ensure_license_notice(system_uri):
+    default_notice = "SNOMED CT content is subject to SNOMED International licensing terms."
+    default_source = "http://snomed.org/licensing"
+
+    if exists_sql(
+        "SELECT SystemUri FROM Terminology_Core.LicenseNotice WHERE SystemUri = ?",
+        system_uri,
+        context="check_license_exists"
+    ):
+        execute_non_query(
+            "UPDATE Terminology_Core.LicenseNotice "
+            "SET NoticeText = ?, Source = ? "
+            "WHERE SystemUri = ?",
+            default_notice,
+            default_source,
+            system_uri,
+            context="update_license"
+        )
+    else:
+        execute_non_query(
+            "INSERT INTO Terminology_Core.LicenseNotice "
+            "(SystemUri, NoticeText, Source) "
+            "SELECT ?, ?, ?",
+            system_uri,
+            default_notice,
+            default_source,
+            context="insert_license"
+        )
+
+def resolve_effective_token(effective_date, release_id):
+    if effective_date:
+        value = str(effective_date).strip()
+        if len(value) == 10 and value[4] == "-" and value[7] == "-":
+            return value[0:4] + value[5:7] + value[8:10]
+        if len(value) == 8 and value.isdigit():
+            return value
+
+    if release_id:
+        match = re.search(r"(\d{8})", str(release_id))
+        if match:
+            return match.group(1)
+
+    return ""
+
+def build_snomed_version_uri(system_uri, effective_date, release_id):
+    uri = (system_uri or "").strip().rstrip("/")
+    if uri == "":
+        return ""
+
+    # If caller already passed a fully-versioned SNOMED URI, keep it.
+    if re.match(r"^http://snomed\.info/sct/\d+/version/\d{8}$", uri):
+        return uri
+
+    # If caller passed an edition URI, append version date when available.
+    if re.match(r"^http://snomed\.info/sct/\d+$", uri):
+        token = resolve_effective_token(effective_date, release_id)
+        if token != "":
+            return uri + "/version/" + token
+        return uri
+
+    # For non-edition URIs (for example plain http://snomed.info/sct), keep empty.
+    return ""
+
 def ensure_release(release_id, system_uri, effective_date, set_active):
+    version_uri = build_snomed_version_uri(system_uri, effective_date, release_id)
+
     if exists_sql(
         "SELECT ReleaseId FROM Terminology_Core.VersionRelease WHERE ReleaseId = ?",
         release_id,
@@ -118,9 +219,10 @@ def ensure_release(release_id, system_uri, effective_date, set_active):
         if effective_date:
             execute_non_query(
                 "UPDATE Terminology_Core.VersionRelease "
-                "SET SystemUri = ?, EffectiveDate = DATE(?), IsActive = 0 "
+                "SET SystemUri = ?, VersionUri = ?, EffectiveDate = DATE(?), IsActive = 0 "
                 "WHERE ReleaseId = ?",
                 system_uri,
+                version_uri,
                 effective_date,
                 release_id,
                 context="update_release"
@@ -128,9 +230,10 @@ def ensure_release(release_id, system_uri, effective_date, set_active):
         else:
             execute_non_query(
                 "UPDATE Terminology_Core.VersionRelease "
-                "SET SystemUri = ?, EffectiveDate = NULL, IsActive = 0 "
+                "SET SystemUri = ?, VersionUri = ?, EffectiveDate = NULL, IsActive = 0 "
                 "WHERE ReleaseId = ?",
                 system_uri,
+                version_uri,
                 release_id,
                 context="update_release_no_date"
             )
@@ -138,20 +241,22 @@ def ensure_release(release_id, system_uri, effective_date, set_active):
         if effective_date:
             execute_non_query(
                 "INSERT INTO Terminology_Core.VersionRelease "
-                "(ReleaseId, SystemUri, EffectiveDate, IsActive) "
-                "SELECT ?, ?, DATE(?), 0",
+                "(ReleaseId, SystemUri, VersionUri, EffectiveDate, IsActive) "
+                "SELECT ?, ?, ?, DATE(?), 0",
                 release_id,
                 system_uri,
+                version_uri,
                 effective_date,
                 context="insert_release"
             )
         else:
             execute_non_query(
                 "INSERT INTO Terminology_Core.VersionRelease "
-                "(ReleaseId, SystemUri, EffectiveDate, IsActive) "
-                "SELECT ?, ?, NULL, 0",
+                "(ReleaseId, SystemUri, VersionUri, EffectiveDate, IsActive) "
+                "SELECT ?, ?, ?, NULL, 0",
                 release_id,
                 system_uri,
+                version_uri,
                 context="insert_release_no_date"
             )
 
@@ -216,6 +321,184 @@ def find_files(base_dir, pattern):
     matches = glob.glob(os.path.join(base_dir, "**", pattern), recursive=True)
     return sorted(list(set(matches)))
 
+def find_release_package_info(base_dir):
+    files = find_files(base_dir, "release_package_information.json")
+    if not files:
+        return ""
+    return files[0]
+
+def parse_json_object(raw_value):
+    if raw_value is None:
+        return {}
+
+    if isinstance(raw_value, bytes):
+        try:
+            text = raw_value.decode("utf-8").strip()
+        except Exception:
+            return {}
+    else:
+        text = str(raw_value).strip()
+
+    if text == "":
+        return {}
+
+    try:
+        parsed = json.loads(text)
+    except Exception:
+        return {}
+
+    if isinstance(parsed, dict):
+        return parsed
+
+    return {}
+
+def get_dataframe_value(df, column_name):
+    if getattr(df, "size", 0) <= 0:
+        return None
+
+    target = str(column_name).lower()
+    for col in list(df.columns):
+        if str(col).lower() == target:
+            try:
+                return df.iloc[0][col]
+            except Exception:
+                return None
+
+    return None
+
+def normalize_effective_time(value):
+    if value is None:
+        return ""
+
+    token = str(value).strip()
+    if len(token) == 10 and token[4] == "-" and token[7] == "-":
+        token = token[0:4] + token[5:7] + token[8:10]
+
+    if len(token) == 8 and token.isdigit():
+        return token
+
+    return ""
+
+def build_source_entry(base_dir, system_uri, effective_date):
+    source = {
+        "systemUri": str(system_uri or ""),
+        "effectiveTime": normalize_effective_time(effective_date),
+        "packageName": "",
+        "packageInfoFile": "",
+        "sourceLabel": "rf2"
+    }
+
+    info_path = find_release_package_info(base_dir)
+    if info_path == "":
+        return source
+
+    source["packageInfoFile"] = info_path
+    source["packageName"] = os.path.basename(os.path.dirname(info_path))
+
+    try:
+        with open(info_path, "r", encoding="utf-8") as f:
+            package_info = json.load(f)
+    except Exception as e:
+        log_info("No se pudo leer release_package_information.json: " + str(e))
+        return source
+
+    if isinstance(package_info, dict):
+        package_effective = normalize_effective_time(package_info.get("effectiveTime", ""))
+        if package_effective != "":
+            source["effectiveTime"] = package_effective
+
+        if "International" in source["packageName"]:
+            source["sourceLabel"] = "international"
+        elif "Spanish" in source["packageName"]:
+            source["sourceLabel"] = "spanish"
+
+    return source
+
+def source_key(entry):
+    return "|".join([
+        str(entry.get("packageName", "")),
+        str(entry.get("effectiveTime", "")),
+        str(entry.get("systemUri", "")),
+        str(entry.get("sourceLabel", ""))
+    ])
+
+def update_release_metadata(release_id, system_uri, effective_date, base_dir):
+    source = build_source_entry(base_dir, system_uri, effective_date)
+
+    df = execute_select_df(
+        "SELECT Metadata FROM Terminology_Core.VersionRelease WHERE ReleaseId = ?",
+        release_id,
+        context="select_release_metadata"
+    )
+
+    metadata = parse_json_object(get_dataframe_value(df, "Metadata"))
+
+    if not isinstance(metadata, dict):
+        metadata = {}
+
+    sources = metadata.get("sources", [])
+    if not isinstance(sources, list):
+        sources = []
+
+    incoming_key = source_key(source)
+    replaced = False
+    for idx, item in enumerate(sources):
+        if isinstance(item, dict) and (source_key(item) == incoming_key):
+            sources[idx] = source
+            replaced = True
+            break
+
+    if not replaced:
+        sources.append(source)
+
+    metadata["sources"] = sources
+    metadata["lastReleaseId"] = release_id
+    metadata["lastSystemUri"] = system_uri
+    metadata_text = json.dumps(metadata, ensure_ascii=False)
+
+    execute_non_query(
+        "UPDATE Terminology_Core.VersionRelease SET Metadata = ? WHERE ReleaseId = ?",
+        metadata_text,
+        release_id,
+        context="update_release_metadata"
+    )
+
+def populate_edition_modules(release_id):
+    execute_non_query(
+        "INSERT INTO Terminology_Snomed.EditionModule "
+        "(ReleaseId, ModuleId, RoleModule) "
+        "SELECT ?, c.ModuleId, "
+        "CASE "
+        "  WHEN c.ModuleId IN (900000000000012004, 900000000000207008, 449080006) THEN 'international' "
+        "  ELSE 'extension' "
+        "END "
+        "FROM ("
+        "  SELECT DISTINCT ModuleId "
+        "  FROM Terminology_Snomed.Concept "
+        "  WHERE ReleaseId = ? AND ModuleId IS NOT NULL"
+        ") c "
+        "WHERE NOT EXISTS ("
+        "  SELECT 1 "
+        "  FROM Terminology_Snomed.EditionModule em "
+        "  WHERE em.ReleaseId = ? AND em.ModuleId = c.ModuleId"
+        ")",
+        release_id,
+        release_id,
+        release_id,
+        context="populate_editionmodule"
+    )
+
+    try:
+        df = execute_select_df(
+            "SELECT COUNT(*) AS Cnt FROM Terminology_Snomed.EditionModule WHERE ReleaseId = ?",
+            release_id,
+            context="count_editionmodule"
+        )
+        if getattr(df, "size", 0) > 0 and ("Cnt" in df.columns):
+            log_info("EditionModules totales: " + str(int(df.iloc[0]["Cnt"])))
+    except Exception:
+        pass
+
 def resolve_files(base_dir):
     lang_suffix = "-" + pPreferredTermLang if pPreferredTermLang else ""
     files = {
@@ -247,7 +530,10 @@ log_info("BaseDir de carga: " + str(pDir))
 log_info("PreferredTermLang: " + str(pPreferredTermLang))
 log_info("ClearRelease: " + str(bool(pClearRelease)))
 
+ensure_code_system(pSystemUri)
+ensure_license_notice(pSystemUri)
 ensure_release(pReleaseId, pSystemUri, pEffectiveDate, bool(pSetActive))
+update_release_metadata(pReleaseId, pSystemUri, pEffectiveDate, pDir)
 
 files = resolve_files(pDir)
 
@@ -313,6 +599,8 @@ flush_rows(
     progress_label="Concepts insertados",
     counter_state=concept_counter
 )
+
+populate_edition_modules(pReleaseId)
 
 desc_insert_sql = """
 INSERT INTO Terminology_Snomed.Description
