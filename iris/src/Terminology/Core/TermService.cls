@@ -145,6 +145,9 @@ Method ResolveAdapter(pSystem As %String = "snomed") As Terminology.Snomed.Snome
     If (pSystem = "") || ($ZCONVERT(pSystem, "L") = "snomed") || (pSystem = "http://snomed.info/sct") {
         Quit ##class(Terminology.Snomed.SnomedAdapter).%New()
     }
+    If ($ZCONVERT(pSystem, "L") = "loinc") || (pSystem = "http://loinc.org") {
+        Quit ##class(Terminology.Loinc.LoincAdapter).%New()
+    }
 
     Set tSC = $$$ERROR($$$NotImplemented, "Unsupported terminology system: "_pSystem)
     $$$ThrowOnError(tSC)

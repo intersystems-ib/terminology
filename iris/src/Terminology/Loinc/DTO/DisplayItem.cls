@@ -7,7 +7,7 @@ Property Lang As %String;
 
 Property DisplayType As %String;
 
-Property Display As %String;
+Property Display As %String(MAXLEN = 4000);
 
 Property RankOrder As %Integer;
 

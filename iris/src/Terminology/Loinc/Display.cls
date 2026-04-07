@@ -21,6 +21,8 @@ Index IXDisplayFind On DisplayNorm [ Type = bitslice ];
 
 Index IXLoincNum On (ReleaseId, LoincNum);
 
+Index IXDisplayNormFind On (DisplayNorm) As %iFind.Index.Basic(INDEXOPTION = 0, LANGUAGE = "es");
+
 Storage Default
 {
 <Data name="DisplayDefaultData">

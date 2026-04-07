@@ -3,7 +3,7 @@ Class Terminology.Loinc.DTO.SearchItem Extends Terminology.Loinc.DTO.Base
 
 Property LoincNum As %String;
 
-Property Display As %String;
+Property Display As %String(MAXLEN = 4000);
 
 Property DisplayType As %String;
 
