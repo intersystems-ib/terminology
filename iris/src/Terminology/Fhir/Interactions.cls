@@ -16,7 +16,7 @@ Method Read(pResourceType As %String, pResourceId As %String, pVersionId As %Str
         }
     }
     elseif pResourceType="ValueSet" {
-        set tSC = ##class(Terminology.Core.TermService).%New().GetValueSetInfo("snomed", pResourceId, .info)
+        set tSC = ..GetValueSetInfoAnySystem(pResourceId, .info)
         $$$ThrowOnError(tSC)
 
         set resource = ##class(Terminology.Fhir.ResourceMapper).BuildValueSet(info)
@@ -83,7 +83,7 @@ Method SearchMetadataResources(pResourceType As %String, pParameters As HS.FHIRS
     }
 
     If pResourceType = "ValueSet" {
-        Set tSC = service.SearchValueSets("snomed", $Get(filters("url")), $Get(filters("_id")), $Get(filters("name")), $Get(filters("version")), .searchResult)
+        Set tSC = ..SearchValueSetsAcrossSystems(service, .filters, .searchResult)
         $$$ThrowOnError(tSC)
         Set tSC = ..AddValueSetRows(result, searchResult)
         $$$ThrowOnError(tSC)
@@ -133,6 +133,46 @@ Method AddValueSetRows(ByRef pSearchResult As HS.FHIRServer.Util.SearchResult, p
     }
 
     Quit $$$OK
+}
+
+/// ValueSet ids are not globally self-describing in the current FHIR surface, so try the
+/// supported systems in order and return the first match.
+Method GetValueSetInfoAnySystem(pResourceId As %String, Output pInfo As Terminology.Core.DTO.ValueSetInfo) As %Status [ Private ]
+{
+    Set pInfo = ##class(Terminology.Core.DTO.ValueSetInfo).%New()
+
+    Set tSC = ##class(Terminology.Core.TermService).%New().GetValueSetInfo("snomed", pResourceId, .pInfo)
+    $$$ThrowOnError(tSC)
+    If pInfo.Id '= "" {
+        Return $$$OK
+    }
+
+    Set tSC = ##class(Terminology.Core.TermService).%New().GetValueSetInfo("loinc", pResourceId, .pInfo)
+    $$$ThrowOnError(tSC)
+    Return $$$OK
+}
+
+/// Aggregates ValueSet search results from the supported terminology systems.
+Method SearchValueSetsAcrossSystems(pService As Terminology.Core.TermService, ByRef pFilters, Output pResult As Terminology.Core.DTO.ValueSetListResult) As %Status [ Private ]
+{
+    Set pResult = ##class(Terminology.Core.DTO.ValueSetListResult).%New()
+
+    For systemIndex=1:1:$ListLength($LB("snomed","loinc")) {
+        Set system = $List($LB("snomed","loinc"), systemIndex)
+        Set tSC = pService.SearchValueSets(system, $Get(pFilters("url")), $Get(pFilters("_id")), $Get(pFilters("name")), $Get(pFilters("version")), .systemResult)
+        $$$ThrowOnError(tSC)
+
+        If '$IsObject(systemResult) {
+            Continue
+        }
+
+        For itemIndex=1:1:systemResult.Items.Count() {
+            Do pResult.Items.Insert(systemResult.Items.GetAt(itemIndex))
+        }
+    }
+
+    Set pResult.Count = $Select($IsObject(pResult.Items):pResult.Items.Count(), 1:0)
+    Return $$$OK
 }
 
 Method ValidateSupportedSearchParameters(pResourceType As %String, pParameters As HS.FHIRServer.API.Data.QueryParameters = "", Output pFilters) As %Status [ Private ]

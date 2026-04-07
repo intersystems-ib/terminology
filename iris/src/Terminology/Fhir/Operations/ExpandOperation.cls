@@ -22,6 +22,7 @@ ClassMethod FHIRInstanceOpExpand(pService As HS.FHIRServer.API.Service, pRequest
 }
 
 /// Keeps the FHIR layer thin by validating request semantics and delegating expansion retrieval.
+/// ValueSet expansion is currently implemented for SNOMED refsets and LOINC groups.
 ClassMethod ProcessValueSetExpand(pService As HS.FHIRServer.API.Service, pRequest As HS.FHIRServer.API.Data.Request, pResponse As HS.FHIRServer.API.Data.Response, pResourceType As %String, pResourceId As %String = "")
 {
     If pResourceType'="ValueSet" {
@@ -37,7 +38,7 @@ ClassMethod ProcessValueSetExpand(pService As HS.FHIRServer.API.Service, pReques
     $$$ThrowOnError(tSC)
 
     Set tSC = ##class(Terminology.Core.TermService).%New().ExpandValueSet(
-        "snomed",
+        context.system,
         context.valueSetId,
         context.version,
         context.lang,
@@ -53,7 +54,7 @@ ClassMethod ProcessValueSetExpand(pService As HS.FHIRServer.API.Service, pReques
         $$$ThrowFHIR($$$HSFHIRErrResourceNotFound, "ValueSet", context.valueSetId, $$$OutcomeInvalid(404))
     }
 
-    Set response = ..BuildExpandResponse(valueSetInfo, members, inputs.offset)
+    Set response = ..BuildExpandResponse(valueSetInfo, context.systemUri, members, inputs.offset)
     Set pResponse.Status = 200
     Set pResponse.Json = response
 }
@@ -93,36 +94,35 @@ ClassMethod ParseExpandInputs(pRequest As HS.FHIRServer.API.Data.Request, Output
     Quit $$$OK
 }
 
-/// Resolves the effective ValueSet id, version and language context from the request target and metadata.
+/// Resolves the effective ValueSet id, owning code system and language context from the request target and metadata.
 ClassMethod ResolveExpandContext(pResourceId As %String, pUrl As %String, pRequestedVersion As %String, pDisplayLanguage As %String, Output pContext As %DynamicObject) As %Status [ Private ]
 {
     Set pContext = ##class(%DynamicObject).%New()
     Set service = ##class(Terminology.Core.TermService).%New()
     Set codeSystemService = ##class(Terminology.Core.TermService).%New()
 
-    Set valueSetId = pResourceId
-    If valueSetId = "" {
-        Set valueSetId = ..ExtractValueSetIdFromUrl(pUrl)
-    }
-
-    If valueSetId = "" {
+    Set tSC = ..ResolveValueSetTarget(pResourceId, pUrl, .target)
+    $$$ThrowOnError(tSC)
+    If ('$IsObject(target)) || (target.valueSetId = "") {
         $$$ThrowFHIR($$$GeneralError, "A ValueSet id or url parameter is required for ValueSet/$expand", $$$OutcomeInvalid(400))
     }
 
-    Set tSC = service.GetValueSetInfo("snomed", valueSetId, .valueSetInfo)
+    Set tSC = service.GetValueSetInfo(target.system, target.valueSetId, .valueSetInfo)
     $$$ThrowOnError(tSC)
     If ('$IsObject(valueSetInfo)) || (valueSetInfo.Id = "") {
-        $$$ThrowFHIR($$$HSFHIRErrResourceNotFound, "ValueSet", valueSetId, $$$OutcomeInvalid(404))
+        $$$ThrowFHIR($$$HSFHIRErrResourceNotFound, "ValueSet", target.valueSetId, $$$OutcomeInvalid(404))
     }
 
     If (pUrl '= "") && (valueSetInfo.Url '= pUrl) {
         $$$ThrowFHIR($$$GeneralError, "The url parameter does not match the targeted ValueSet resource", $$$OutcomeInvalid(400))
     }
 
-    Set tSC = codeSystemService.GetCodeSystemInfo("snomed", .codeSystemInfo)
+    Set tSC = codeSystemService.GetCodeSystemInfo(target.system, .codeSystemInfo)
     $$$ThrowOnError(tSC)
 
     Do pContext.%Set("valueSetId", valueSetInfo.Id)
+    Do pContext.%Set("system", target.system)
+    Do pContext.%Set("systemUri", target.systemUri)
     Do pContext.%Set("version", $Select(pRequestedVersion'="":pRequestedVersion, valueSetInfo.Version'="":valueSetInfo.Version, 1:""))
     Do pContext.%Set("lang", $Select(pDisplayLanguage'="":pDisplayLanguage, $IsObject(codeSystemInfo):codeSystemInfo.DefaultLang, 1:""))
     Do pContext.%Set("dialect", "")
@@ -132,6 +132,48 @@ ClassMethod ResolveExpandContext(pResourceId As %String, pUrl As %String, pReque
     }
 
     Quit $$$OK
+}
+
+/// Resolves the target ValueSet id and system from either the resource id or canonical url.
+ClassMethod ResolveValueSetTarget(pResourceId As %String, pUrl As %String, Output pTarget As %DynamicObject) As %Status [ Private ]
+{
+    Set pTarget = ##class(%DynamicObject).%New()
+    Do pTarget.%Set("valueSetId", "")
+    Do pTarget.%Set("system", "")
+    Do pTarget.%Set("systemUri", "")
+
+    If pResourceId '= "" {
+        If $Extract($ZCONVERT(pResourceId, "L"), 1, 12) = "loinc-group-" {
+            Do pTarget.%Set("valueSetId", pResourceId)
+            Do pTarget.%Set("system", "loinc")
+            Do pTarget.%Set("systemUri", "http://loinc.org")
+            Return $$$OK
+        }
+
+        Do pTarget.%Set("valueSetId", pResourceId)
+        Do pTarget.%Set("system", "snomed")
+        Do pTarget.%Set("systemUri", "http://snomed.info/sct")
+        Return $$$OK
+    }
+
+    If pUrl = "" {
+        Return $$$OK
+    }
+
+    If pUrl["?fhir_vs=refset/" {
+        Do pTarget.%Set("valueSetId", $Piece(pUrl, "?fhir_vs=refset/", 2))
+        Do pTarget.%Set("system", "snomed")
+        Do pTarget.%Set("systemUri", "http://snomed.info/sct")
+        Return $$$OK
+    }
+
+    If $Extract($ZCONVERT(pUrl, "L"), 1, 20) = "http://loinc.org/vs/" {
+        Do pTarget.%Set("valueSetId", "loinc-group-"_$Piece(pUrl, "http://loinc.org/vs/", 2))
+        Do pTarget.%Set("system", "loinc")
+        Do pTarget.%Set("systemUri", "http://loinc.org")
+    }
+
+    Return $$$OK
 }
 
 /// Supports the current SNOMED refset canonical url form used by this server.
@@ -149,7 +191,11 @@ ClassMethod ExtractValueSetIdFromUrl(pUrl As %String = "") As %String [ Private 
 }
 
 /// Builds a minimal ValueSet resource with an expansion block.
-ClassMethod BuildExpandResponse(pValueSetInfo As Terminology.Core.DTO.ValueSetInfo, pMembers As Terminology.Snomed.DTO.RefsetMemberListResult, pOffset As %Integer = 0) As %DynamicObject [ Private ]
+/// Expansion members are mapped from the owning terminology-specific DTOs into common FHIR contains items.
+/// FHIR expansions should list codes, not every underlying designation row, so duplicate
+/// `system` + `code` pairs are collapsed to one `contains` item.
+/// For LOINC, the selected display follows an explicit preference order rather than raw row order.
+ClassMethod BuildExpandResponse(pValueSetInfo As Terminology.Core.DTO.ValueSetInfo, pSystemUri As %String, pMembers, pOffset As %Integer = 0) As %DynamicObject [ Private ]
 {
     Set response = ##class(Terminology.Fhir.ResourceMapper).BuildValueSet(pValueSetInfo)
     If '$IsObject(response) {
@@ -170,15 +216,49 @@ ClassMethod BuildExpandResponse(pValueSetInfo As Terminology.Core.DTO.ValueSetIn
                 Continue
             }
 
+            Set code = ..GetExpandMemberCode(pSystemUri, member)
+            If code = "" {
+                Continue
+            }
+
+            Set dedupeKey = pSystemUri_"|"_code
+            Set candidateDisplay = ..GetExpandMemberDisplay(pSystemUri, member)
+            Set candidatePriority = ..GetExpandMemberPriority(pSystemUri, member)
+            Set candidateRankOrder = ..GetExpandMemberRankOrder(pSystemUri, member)
+
+            If '$Data(seen(dedupeKey)) {
+                Set seen(dedupeKey) = 1
+                Set entryCount = $Get(entryCount) + 1
+                Set entryOrder(entryCount) = dedupeKey
+                Set entryCode(dedupeKey) = code
+                Set entryDisplay(dedupeKey) = candidateDisplay
+                Set entryPriority(dedupeKey) = candidatePriority
+                Set entryRankOrder(dedupeKey) = candidateRankOrder
+                Continue
+            }
+
+            If ..ShouldReplaceExpandMember(entryPriority(dedupeKey), entryRankOrder(dedupeKey), $Get(entryDisplay(dedupeKey)), candidatePriority, candidateRankOrder, candidateDisplay) {
+                Set entryDisplay(dedupeKey) = candidateDisplay
+                Set entryPriority(dedupeKey) = candidatePriority
+                Set entryRankOrder(dedupeKey) = candidateRankOrder
+            }
+        }
+
+        For entryIndex=1:1:$Get(entryCount) {
+            Set dedupeKey = $Get(entryOrder(entryIndex))
+            If dedupeKey = "" {
+                Continue
+            }
+
             Set containsItem = ##class(%DynamicObject).%New()
-            Do containsItem.%Set("system", "http://snomed.info/sct")
-            Do containsItem.%Set("code", member.ConceptId)
-            If member.PreferredTerm '= "" {
-                Do containsItem.%Set("display", member.PreferredTerm)
+            Do containsItem.%Set("system", pSystemUri)
+            Do containsItem.%Set("code", $Get(entryCode(dedupeKey)))
+            If $Get(entryDisplay(dedupeKey)) '= "" {
+                Do containsItem.%Set("display", $Get(entryDisplay(dedupeKey)))
             }
             Do contains.%Push(containsItem)
         }
-        Do expansion.%Set("total", pMembers.Count)
+        Do expansion.%Set("total", contains.%Size())
     } Else {
         Do expansion.%Set("total", 0)
     }
@@ -186,6 +266,109 @@ ClassMethod BuildExpandResponse(pValueSetInfo As Terminology.Core.DTO.ValueSetIn
     Do expansion.%Set("contains", contains)
     Do response.%Set("expansion", expansion)
     Quit response
+}
+
+/// Extracts the member code from a SNOMED refset-member DTO or a LOINC group-member DTO.
+ClassMethod GetExpandMemberCode(pSystemUri As %String, pMember) As %String [ Private ]
+{
+    If '$IsObject(pMember) {
+        Return ""
+    }
+
+    If pSystemUri = "http://loinc.org" {
+        Return $PROPERTY(pMember, "LoincNum")
+    }
+
+    Return $PROPERTY(pMember, "ConceptId")
+}
+
+/// Extracts the display text from a SNOMED refset-member DTO or a LOINC group-member DTO.
+ClassMethod GetExpandMemberDisplay(pSystemUri As %String, pMember) As %String [ Private ]
+{
+    If '$IsObject(pMember) {
+        Return ""
+    }
+
+    If pSystemUri = "http://loinc.org" {
+        Return $PROPERTY(pMember, "Display")
+    }
+
+    Return $PROPERTY(pMember, "PreferredTerm")
+}
+
+/// Returns the explicit display preference used when one LOINC code has multiple designations.
+ClassMethod GetExpandMemberPriority(pSystemUri As %String, pMember) As %Integer [ Private ]
+{
+    If '$IsObject(pMember) {
+        Return 999
+    }
+
+    If pSystemUri '= "http://loinc.org" {
+        Return 1
+    }
+
+    Set displayType = $ZCONVERT($PROPERTY(pMember, "DisplayType"), "U")
+    If displayType = "LONGCOMMONNAME" {
+        Return 1
+    }
+    If displayType = "SHORTNAME" {
+        Return 2
+    }
+    If displayType = "DISPLAYNAME" {
+        Return 3
+    }
+    If displayType = "CONSUMERNAME" {
+        Return 4
+    }
+    If displayType = "LINGUISTICVARIANT" {
+        Return 5
+    }
+
+    Return 99
+}
+
+/// Uses RankOrder as a stable tie-breaker when two designations share the same semantic priority.
+ClassMethod GetExpandMemberRankOrder(pSystemUri As %String, pMember) As %Integer [ Private ]
+{
+    If '$IsObject(pMember) {
+        Return 999999
+    }
+
+    If pSystemUri '= "http://loinc.org" {
+        Return 0
+    }
+
+    Return +$PROPERTY(pMember, "RankOrder")
+}
+
+/// Chooses the better designation candidate for one expanded code.
+ClassMethod ShouldReplaceExpandMember(pCurrentPriority As %Integer, pCurrentRankOrder As %Integer, pCurrentDisplay As %String, pCandidatePriority As %Integer, pCandidateRankOrder As %Integer, pCandidateDisplay As %String) As %Boolean [ Private ]
+{
+    If pCandidatePriority < pCurrentPriority {
+        Return 1
+    }
+
+    If pCandidatePriority > pCurrentPriority {
+        Return 0
+    }
+
+    If pCandidateRankOrder < pCurrentRankOrder {
+        Return 1
+    }
+
+    If pCandidateRankOrder > pCurrentRankOrder {
+        Return 0
+    }
+
+    If (pCurrentDisplay = "") && (pCandidateDisplay '= "") {
+        Return 1
+    }
+
+    If (pCandidateDisplay '= "") && ($ZCONVERT(pCandidateDisplay, "L") < $ZCONVERT(pCurrentDisplay, "L")) {
+        Return 1
+    }
+
+    Return 0
 }
 
 }

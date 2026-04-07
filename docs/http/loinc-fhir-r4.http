@@ -81,15 +81,27 @@ GET {{baseUrl}}/CodeSystem/$subsumes?system={{systemUrl}}&codeA={{conceptCode}}&
 Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
 
-### ValueSet search
-# Not supported yet for LOINC in the current FHIR layer.
-# GET {{baseUrl}}/ValueSet
-# Accept: application/fhir+json
-# Authorization: Basic {{username}}:{{password}}
+### ValueSet search by _id
+GET {{baseUrl}}/ValueSet?_id=loinc-group-LG51020-2
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet search by url
+GET {{baseUrl}}/ValueSet?url=http://loinc.org/vs/LG51020-2
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet search by name
+GET {{baseUrl}}/ValueSet?name=LoincGroupLG51020-2
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
 
 ### ValueSet $expand by url
-# Not supported yet for LOINC in the current FHIR layer.
-# Example canonical shown only as a placeholder until a LOINC ValueSet model is defined.
-# GET {{baseUrl}}/ValueSet/$expand?url=http://loinc.org/vs/{{conceptCode}}&displayLanguage=es&count=10&offset=0
-# Accept: application/fhir+json
-# Authorization: Basic {{username}}:{{password}}
+GET {{baseUrl}}/ValueSet/$expand?url=http://loinc.org/vs/LG51020-2&displayLanguage=es&count=10&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by id
+GET {{baseUrl}}/ValueSet/loinc-group-LG51020-2/$expand?displayLanguage=es&count=10&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}

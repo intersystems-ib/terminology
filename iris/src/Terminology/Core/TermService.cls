@@ -124,11 +124,10 @@ Method SearchValueSets(pSystem As %String = "snomed", pUrl As %String = "", pId 
     Return ..ResolveAdapter(pSystem).SearchValueSets(pUrl, pId, pName, pVersion, .pResult)
 }
 
-/// Returns minimal value set metadata and members for the current SNOMED-backed FHIR expand MVP.
-Method ExpandValueSet(pSystem As %String = "snomed", pValueSetId As %String = "", pVersion As %String = "", pLang As %String = "", pDialect As %String = "", pCount As %Integer = 100, pOffset As %Integer = 0, Output pInfo As Terminology.Core.DTO.ValueSetInfo, Output pMembers As Terminology.Snomed.DTO.RefsetMemberListResult) As %Status
+/// Returns minimal value set metadata and members for the supported terminology-specific FHIR expand paths.
+Method ExpandValueSet(pSystem As %String = "snomed", pValueSetId As %String = "", pVersion As %String = "", pLang As %String = "", pDialect As %String = "", pCount As %Integer = 100, pOffset As %Integer = 0, Output pInfo As Terminology.Core.DTO.ValueSetInfo, Output pMembers) As %Status
 {
     Set pInfo = ##class(Terminology.Core.DTO.ValueSetInfo).%New()
-    Set pMembers = ##class(Terminology.Snomed.DTO.RefsetMemberListResult).%New()
 
     Set tSC = ..ResolveAdapter(pSystem).GetValueSetInfo(pValueSetId, pVersion, .pInfo)
     $$$ThrowOnError(tSC)
@@ -137,7 +136,13 @@ Method ExpandValueSet(pSystem As %String = "snomed", pValueSetId As %String = ""
         Return $$$OK
     }
 
-    Return ..ResolveAdapter(pSystem).GetRefsetMembers(pValueSetId, pInfo.Version, pLang, pDialect, pCount, pOffset, .pMembers)
+    If ($ZCONVERT(pSystem, "L") = "loinc") || (pSystem = "http://loinc.org") {
+        Set pMembers = ##class(Terminology.Loinc.DTO.GroupMemberResult).%New()
+        Return ##class(Terminology.Loinc.LoincAdapter).%New().ExpandValueSetMembers(pValueSetId, pInfo.Version, pLang, pCount, pOffset, .pMembers)
+    }
+
+    Set pMembers = ##class(Terminology.Snomed.DTO.RefsetMemberListResult).%New()
+    Return ##class(Terminology.Snomed.SnomedAdapter).%New().GetRefsetMembers(pValueSetId, pInfo.Version, pLang, pDialect, pCount, pOffset, .pMembers)
 }
 
 /// Explicit adapter resolution keeps the current implementation simple while making

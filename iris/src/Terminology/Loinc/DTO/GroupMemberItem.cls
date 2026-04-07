@@ -5,6 +5,12 @@ Property GroupId As %String;
 
 Property LoincNum As %String;
 
+/// Display type is carried so FHIR expansion can choose one preferred designation per code.
+Property DisplayType As %String;
+
+/// RankOrder is carried as a stable tie-breaker when multiple display rows share a code.
+Property RankOrder As %Integer;
+
 Property Display As %String(MAXLEN = "");
 
 Storage Default
@@ -18,6 +24,12 @@ Storage Default
 <Value>LoincNum</Value>
 </Value>
 <Value name="3">
+<Value>DisplayType</Value>
+</Value>
+<Value name="4">
+<Value>RankOrder</Value>
+</Value>
+<Value name="5">
 <Value>Display</Value>
 </Value>
 </Data>
