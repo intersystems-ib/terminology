@@ -5,7 +5,7 @@ Property GroupId As %String;
 
 Property LoincNum As %String;
 
-Property Display As %String;
+Property Display As %String(MAXLEN = "");
 
 Storage Default
 {

@@ -47,6 +47,10 @@ XData ProductionDefinition
     <Setting Target="Host" Name="ClearBeforeLoad">1</Setting>
     <Setting Target="Host" Name="TempDirectory">/iris-shared/tmp</Setting>
   </Item>
+  <Item Name="LoincGatewayService" Category="" ClassName="Terminology.Production.BS.LoincGatewayService" PoolSize="0" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+  </Item>
+  <Item Name="LoincRepositoryOperation" Category="" ClassName="Terminology.Production.BO.LoincRepositoryOperation" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+  </Item>
 </Production>
 }
 

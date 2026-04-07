@@ -10,7 +10,7 @@ Method SearchConcepts(pReleaseId As %String = "", pLang As %String = "", pDialec
 /// Implements the common lookup contract using the LOINC code query.
 Method LookupCode(pCode As %String = "", pReleaseId As %String = "", pLang As %String = "", pDialect As %String = "", Output pResult As Terminology.Loinc.DTO.CodeResult) As %Status
 {
-    Quit pDialect  // dialect not used for now
+    // TODO: dialect not used for now
     Return ..GetRepository().GetCodeByCode(pCode, pReleaseId, .pResult)
 }
 

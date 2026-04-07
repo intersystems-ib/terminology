@@ -3,7 +3,7 @@ Class Terminology.Loinc.DTO.GroupItem Extends Terminology.Loinc.DTO.Base
 
 Property GroupId As %String;
 
-Property GroupName As %String;
+Property GroupName As %String(MAXLEN = "");
 
 Property GroupType As %String;
 

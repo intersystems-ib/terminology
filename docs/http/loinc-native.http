@@ -1,0 +1,55 @@
+@baseUrl = http://localhost:52774/terminology/loinc
+@releaseId = 2.82
+@loincNum = 718-7
+@loincNum2 = LP392452-1
+@searchText = hemo
+@groupId = LG8749-6
+@hierarchyType = COMPONENTBYSYSTEM
+@username = superuser
+@password = SYS
+
+### Search LOINC codes
+GET {{baseUrl}}/search?q={{searchText}}&releaseId={{releaseId}}&lang=es&limit=20&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get code by LOINC number
+GET {{baseUrl}}/codes/{{loincNum}}?releaseId={{releaseId}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get displays for a code
+GET {{baseUrl}}/codes/{{loincNum}}/displays?releaseId={{releaseId}}&lang=es&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get parts for a code
+GET {{baseUrl}}/codes/{{loincNum}}/parts?releaseId={{releaseId}}&limit=200&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get ancestors in the component hierarchy
+GET {{baseUrl}}/codes/{{loincNum}}/ancestors?releaseId={{releaseId}}&hierarchyType={{hierarchyType}}&maxDepth=10&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get descendants in the component hierarchy
+GET {{baseUrl}}/codes/{{loincNum2}/descendants?releaseId={{releaseId}}&hierarchyType={{hierarchyType}}&maxDepth=10&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### List LOINC groups
+GET {{baseUrl}}/groups?releaseId={{releaseId}}&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get members of a LOINC group
+GET {{baseUrl}}/groups/{{groupId}}/members?releaseId={{releaseId}}&lang=es&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Validate code: example LOINC number
+GET {{baseUrl}}/validate-code?releaseId={{releaseId}}&code={{loincNum}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+

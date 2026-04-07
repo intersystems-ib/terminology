@@ -357,7 +357,7 @@ Method ValidateCode(pReleaseId As %String = "", pCode As %String = "", Output pR
         If rset.%Next() {
             Set pResult.Exists = 1
             Set pResult.Status = rset.%Get("Status")
-            Set pResult.Active = $Select($ZCONVERT($Get(pResult.Status),"L")="active":1,1:0)
+            Set pResult.Active = $Select($ZCONVERT(pResult.Status,"L")="active":1,1:0)
         } Else {
             Set pResult.Exists = 0
             Set pResult.Status = ""
