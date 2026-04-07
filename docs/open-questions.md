@@ -15,11 +15,11 @@
   derive edition SCTID automatically from loaded package/module metadata to build standards-based `VersionUri`.
   decide whether `LicenseNotice` should be system-level only or version-specific.
 
-- LOINC:
-  LOINC will be the next terminology to support.
-  Directions to consider:
-  start with a minimal read-only slice: lookup, search, basic FHIR support.
-  define the LOINC load path and decide which source files/tables are needed first.
-  review `Terminology.Core` and remove or isolate SNOMED-specific assumptions.
-  decide what hierarchy/navigation means for the first LOINC milestone.
-  define the first repository, adapter, and test surface before adding broader features.
+- LOINC follow-up:
+  the first native LOINC slice is now present, with developer examples in
+  `docs/http/loinc-native.http` and `docs/sql/loinc-query-examples.md`.
+  Remaining directions to consider:
+  add LOINC-focused tests.
+  extend basic FHIR support over the shared terminology contract.
+  review `Terminology.Core` and remove or isolate remaining SNOMED-specific assumptions.
+  decide how much hierarchy/navigation should be exposed beyond the current closure-based endpoints.
