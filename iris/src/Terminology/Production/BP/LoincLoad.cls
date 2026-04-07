@@ -9,6 +9,8 @@ Property ClearBeforeLoad As %Boolean [ InitialExpression = 0 ];
 
 Property BuildDisplay As %Boolean [ InitialExpression = 1 ];
 
+Property BaseDisplayLang As %String(MAXLEN = 10) [ InitialExpression = "en" ];
+
 Property DisplayLang As %String(MAXLEN = 10) [ InitialExpression = "es" ];
 
 Property LinguisticVariantPrefix As %String(MAXLEN = 50) [ InitialExpression = "esES12" ];
@@ -19,7 +21,7 @@ Property BuildComponentBySystemHierarchy As %Boolean [ InitialExpression = 1 ];
 
 Property BuildGroupHierarchy As %Boolean [ InitialExpression = 1 ];
 
-Parameter SETTINGS = "TempDirectory,ClearBeforeLoad,BuildDisplay,DisplayLang,LinguisticVariantPrefix,BuildHierarchy,BuildComponentBySystemHierarchy,BuildGroupHierarchy";
+Parameter SETTINGS = "TempDirectory,ClearBeforeLoad,BuildDisplay,BaseDisplayLang,DisplayLang,LinguisticVariantPrefix,BuildHierarchy,BuildComponentBySystemHierarchy,BuildGroupHierarchy";
 
 Method OnRequest(pRequest As Terminology.Production.Msg.LoincLoadRequest, Output pResponse As Terminology.Production.Msg.LoincLoadResponse) As %Status
 {
@@ -53,14 +55,20 @@ Method OnRequest(pRequest As Terminology.Production.Msg.LoincLoadRequest, Output
         }
 
         If ..BuildDisplay {
-            Do ##class(Ens.Util.Log).LogInfo("Terminology.Production.BP.LoincLoad","OnRequest","Starting LOINC BuilderDisplay. ReleaseId="_pRequest.ReleaseId_" Lang="_..DisplayLang_" Variant="_..LinguisticVariantPrefix)
+            Do ##class(Ens.Util.Log).LogInfo(
+                "Terminology.Production.BP.LoincLoad",
+                "OnRequest",
+                "Starting LOINC BuilderDisplay. ReleaseId="_pRequest.ReleaseId_" BaseLang="_..BaseDisplayLang_" VariantLang="_..DisplayLang_" Variant="_..LinguisticVariantPrefix
+            )
 
             Set tSC = ##class(Terminology.Loinc.Utils.BuilderDisplay).Build(
                 loincDir,
                 pRequest.ReleaseId,
+                ..BaseDisplayLang,
                 ..DisplayLang,
                 ..LinguisticVariantPrefix
             )
+
             If $$$ISERR(tSC) {
                 Set pResponse.Message = "LOINC imported but BuilderDisplay failed: "_$System.Status.GetOneErrorText(tSC)
                 Return tSC
@@ -160,6 +168,9 @@ Storage Default
 </Value>
 <Value name="8">
 <Value>BuildGroupHierarchy</Value>
+</Value>
+<Value name="9">
+<Value>BaseDisplayLang</Value>
 </Value>
 </Data>
 <DefaultData>LoincLoadDefaultData</DefaultData>

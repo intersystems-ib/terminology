@@ -1,29 +1,37 @@
 Class Terminology.Loinc.Utils.BuilderDisplay Extends %RegisteredObject
 {
 
-ClassMethod Build(pDir As %String, pReleaseId As %String, pLang As %String = "es", pLinguisticVariantPrefix As %String = "") As %Status
+ClassMethod Build(pDir As %String, pReleaseId As %String, pBaseLang As %String = "en", pLang As %String = "es", pLinguisticVariantPrefix As %String = "") As %Status
 {
     Set tSC = $$$OK
 
     Try {
-        Do ..LogInfo("Inicio BuildDisplay | ReleaseId="_pReleaseId_" | Lang="_pLang_" | Prefix="_pLinguisticVariantPrefix)
+        Do ..LogInfo("Inicio BuildDisplay | ReleaseId="_pReleaseId_" | BaseLang="_pBaseLang_" | VariantLang="_pLang_" | Prefix="_pLinguisticVariantPrefix)
 
         Do ..LogInfo("Paso 1: limpieza de Display")
-        Set tSC = ..DeleteExisting(pReleaseId, pLang)
+        Set tSC = ..DeleteExisting(pReleaseId, pBaseLang)
         If $$$ISERR(tSC) {
             Do ..LogInfo("Error en Paso 1: "_$System.Status.GetOneErrorText(tSC))
             Return tSC
         }
 
+        If pLang'=pBaseLang {
+            Set tSC = ..DeleteExisting(pReleaseId, pLang)
+            If $$$ISERR(tSC) {
+                Do ..LogInfo("Error limpiando idioma variante: "_$System.Status.GetOneErrorText(tSC))
+                Return tSC
+            }
+        }
+
         Do ..LogInfo("Paso 2: inserción de displays base")
-        Set tSC = ..InsertBaseDisplays(pReleaseId, pLang)
+        Set tSC = ..InsertBaseDisplays(pReleaseId, pBaseLang)
         If $$$ISERR(tSC) {
             Do ..LogInfo("Error en Paso 2: "_$System.Status.GetOneErrorText(tSC))
             Return tSC
         }
 
         Do ..LogInfo("Paso 3: inserción de ConsumerName")
-        Set tSC = ..InsertConsumerDisplays(pReleaseId, pLang)
+        Set tSC = ..InsertConsumerDisplays(pReleaseId, pBaseLang)
         If $$$ISERR(tSC) {
             Do ..LogInfo("Error en Paso 3: "_$System.Status.GetOneErrorText(tSC))
             Return tSC
@@ -42,7 +50,7 @@ ClassMethod Build(pDir As %String, pReleaseId As %String, pLang As %String = "es
             Do ..LogInfo("No se encontró fichero de variante para prefijo: "_pLinguisticVariantPrefix)
         }
 
-        Do ..LogInfo("Fin BuildDisplay OK | ReleaseId="_pReleaseId_" | Lang="_pLang)
+        Do ..LogInfo("Fin BuildDisplay OK | ReleaseId="_pReleaseId_" | BaseLang="_pBaseLang_" | VariantLang="_pLang)
         Return $$$OK
     } Catch ex {
         Do ..LogInfo("Excepción en BuildDisplay: "_ex.DisplayString())
@@ -216,38 +224,43 @@ ClassMethod InsertVariantDisplays(pFilePath As %String, pReleaseId As %String, p
             Return tSC
         }
 
+        Set stream.TranslateTable = "UTF8"
+        Do stream.Rewind()
+        If $$$ISERR(tSC) {
+            Return tSC
+        }
+
         Do stream.Rewind()
 
         Set headerLine = stream.ReadLine()
+        If $Extract(headerLine,1)=$Char(65279) {
+            Set headerLine = $Extract(headerLine,2,*)
+        }
         If headerLine="" {
-            Do ..LogInfo("Fichero de variante vacío: "_pFilePath)
+            Do ..LogInfo("Variant file is empty: "_pFilePath)
             Return $$$OK
         }
 
         Set header = ..ParseCsvLine(headerLine)
 
         Set idxLoinc = ..FindHeaderIndex(header, "LOINC_NUM")
+        Set idxText = ..FindHeaderIndex(header, "COMPONENT")
+
         If idxLoinc<1 {
-            Set idxLoinc = ..FindHeaderIndex(header, "LoincNum")
+            Do ..LogInfo("LOINC_NUM column not found in variant file: "_pFilePath)
+            Return $$$ERROR($$$GeneralError, "LOINC_NUM column not found in variant file: "_pFilePath)
         }
 
-        Set idxText = ..FindHeaderIndex(header, "DisplayName")
         If idxText<1 {
-            Set idxText = ..FindHeaderIndex(header, "LONG_COMMON_NAME")
-        }
-        If idxText<1 {
-            Set idxText = ..FindHeaderIndex(header, "LongCommonName")
-        }
-        If idxText<1 {
-            Set idxText = ..FindHeaderIndex(header, "NAME")
-        }
-        If idxText<1 {
-            Set idxText = ..FindHeaderIndex(header, "TRANSLATED_TEXT")
+            Do ..LogInfo("COMPONENT column not found in variant file: "_pFilePath)
+            Return $$$ERROR($$$GeneralError, "COMPONENT column not found in variant file: "_pFilePath)
         }
 
-        If (idxLoinc<1)||(idxText<1) {
-            Return $$$ERROR($$$GeneralError, "Cabecera no válida en fichero de variante: "_pFilePath)
-        }
+        Do ..LogInfo(
+            "InsertVariantDisplays | File="_pFilePath_
+            " | idxLoinc="_idxLoinc_
+            " | idxText="_idxText
+        )
 
         Set stmt = ##class(%SQL.Statement).%New()
         Set sql = "INSERT INTO Terminology_Loinc.Display "_
@@ -260,18 +273,33 @@ ClassMethod InsertVariantDisplays(pFilePath As %String, pReleaseId As %String, p
         }
 
         Set count = 0
+        Set skipped = 0
 
         While 'stream.AtEnd {
             Set line = stream.ReadLine()
-            If line="" {
+            If $ZSTRIP(line,"<>W")="" {
                 Continue
             }
 
             Set cols = ..ParseCsvLine(line)
-            Set loinc = $Get(cols(idxLoinc))
-            Set text = $Get(cols(idxText))
+            Set colCount = $LISTLENGTH(cols)
+
+            Set loinc = ""
+            Set text = ""
+
+            If idxLoinc<=colCount {
+                Set loinc = $LISTGET(cols, idxLoinc)
+            }
+
+            If idxText<=colCount {
+                Set text = $LISTGET(cols, idxText)
+            }
+
+            Set loinc = $ZSTRIP(loinc,"<>W")
+            Set text = $ZSTRIP(text,"<>W")
 
             If (loinc="")!(text="") {
+                Set skipped = skipped + 1
                 Continue
             }
 
@@ -286,61 +314,80 @@ ClassMethod InsertVariantDisplays(pFilePath As %String, pReleaseId As %String, p
             )
 
             Set count = count + 1
+
             If '(count#500) {
-                Do ..LogInfo("Variant displays insertados: "_count)
+                Do ..LogInfo("Variant displays inserted: "_count_" | skipped="_skipped)
             }
         }
 
-        Do ..LogInfo("Variant displays insertados totales: "_count)
+        Do ..LogInfo("Variant displays inserted total: "_count_" | skipped="_skipped)
         Return $$$OK
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
 }
 
-ClassMethod FindHeaderIndex(pHeader As %ListOfDataTypes, pName As %String) As %Integer
+ClassMethod FindHeaderIndex(pHeader As %List, pName As %String) As %Integer
 {
-    Set i = ""
-    For {
-        Set i = pHeader.Next(i)
-        Quit:i=""
-        If pHeader.GetAt(i)=pName {
-            return i
+    Set count = $LISTLENGTH(pHeader)
+    Set idx = 0
+
+    For i=1:1:count {
+        If $LISTGET(pHeader, i)=pName {
+            Set idx = i
+            Quit
         }
     }
-    Quit 0
+
+    Quit idx
 }
 
-ClassMethod ParseCsvLine(pLine As %String) As %ListOfDataTypes
+ClassMethod ParseCsvLine(pLine As %String) As %List
 {
-    Set result = ##class(%ListOfDataTypes).%New()
+    Set result = ""
+
+    // Eliminar CR final (Windows)
+    If $Extract(pLine, *-0) = $Char(13) {
+        Set pLine = $Extract(pLine, 1, *-1)
+    }
+
     Set inQuotes = 0
     Set value = ""
     Set len = $Length(pLine)
+    Set i = 1
 
-    For i=1:1:len {
-        Set ch = $Extract(pLine,i)
+    While i<=len {
+        Set ch = $Extract(pLine, i)
 
         If ch="""" {
-            If inQuotes,(i<len),($Extract(pLine,i+1)="""") {
+            // Comilla escapada ""
+            If inQuotes, (i < len), ($Extract(pLine, i+1)="""") {
                 Set value = value_""""
-                Set i = i + 1
-            } Else {
-                Set inQuotes = 'inQuotes
+                Set i = i + 2
+                Continue
             }
+
+            // Toggle estado
+            Set inQuotes = 'inQuotes
+            Set i = i + 1
             Continue
         }
 
-        If ch=",",'inQuotes {
-            Do result.Insert(value)
+        // Separador real
+        If (ch=",") && ('inQuotes) {
+            Set result = result_$LISTBUILD(value)
             Set value = ""
+            Set i = i + 1
             Continue
         }
 
         Set value = value_ch
+        Set i = i + 1
     }
 
-    Do result.Insert(value)
+    // Último campo
+    Set result = result_$LISTBUILD(value)
+
     Quit result
 }
 

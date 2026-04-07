@@ -64,8 +64,8 @@ def flush_rows(stmt, rows, context="", progress_label="", counter_state=None):
         inserted_now += 1
     if counter_state is not None:
         counter_state["count"] = counter_state.get("count", 0) + inserted_now
-        if progress_label:
-            log_info(progress_label + ": " + str(counter_state["count"]))
+        # if progress_label:
+        #    log_info(progress_label + ": " + str(counter_state["count"]))
     rows.clear()
 
 def clean_date_yyyymmdd(value):
@@ -115,41 +115,6 @@ def resolve_files(base_dir):
         "groupmembers": find_first(os.path.join(base_dir, "**", "AccessoryFiles", "GroupFile", "GroupLoincTerms.csv")),
     }
 
-def ensure_code_system(system_uri):
-    default_name = "LOINC"
-    default_lang = "es"
-    default_dialect = ""
-    default_notes = "LOINC code system"
-
-    if exists_sql(
-        "SELECT SystemUri FROM Terminology_Core.CodeSystem WHERE SystemUri = ?",
-        system_uri,
-        context="check_codesystem_exists"
-    ):
-        execute_non_query(
-            "UPDATE Terminology_Core.CodeSystem "
-            "SET Name = ?, DefaultLang = ?, DefaultDialect = ?, Notes = ? "
-            "WHERE SystemUri = ?",
-            default_name,
-            default_lang,
-            default_dialect,
-            default_notes,
-            system_uri,
-            context="update_codesystem"
-        )
-    else:
-        execute_non_query(
-            "INSERT INTO Terminology_Core.CodeSystem "
-            "(SystemUri, Name, DefaultLang, DefaultDialect, Notes) "
-            "SELECT ?, ?, ?, ?, ?",
-            system_uri,
-            default_name,
-            default_lang,
-            default_dialect,
-            default_notes,
-            context="insert_codesystem"
-        )
-
 def ensure_release(release_id, system_uri, effective_date, set_active):
     if exists_sql("SELECT ReleaseId FROM Terminology_Core.VersionRelease WHERE ReleaseId = ?", release_id, context="check_release_exists"):
         if effective_date:
@@ -193,7 +158,6 @@ def read_csv_rows(path):
 ensure_dir(pDir)
 log_info("BaseDir: " + str(pDir))
 
-ensure_code_system(pSystemUri)
 ensure_release(pReleaseId, pSystemUri, pEffectiveDate, bool(pSetActive))
 
 files = resolve_files(pDir)

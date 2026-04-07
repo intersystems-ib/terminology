@@ -274,44 +274,6 @@ Method GetGroups(pReleaseId As %String = "", pLimit As %Integer = 100, pOffset A
     }
 }
 
-/// Returns one LOINC group row for ValueSet read/search metadata mapping.
-Method GetGroupById(pGroupId As %String = "", pReleaseId As %String = "", Output pResult As Terminology.Loinc.DTO.GroupItem) As %Status
-{
-    Set pResult = ##class(Terminology.Loinc.DTO.GroupItem).%New()
-
-    Try {
-        Set whereList = ""
-        Set argCount = 0
-        Set sql = "SELECT %ID, GroupId, GroupName, GroupType, Version "_
-                  "FROM Terminology_Loinc.LoincGroup "
-
-        If (pReleaseId '= "") {
-            Set whereList = whereList_$ListBuild("ReleaseId = ?")
-            Do ..AddArgument(.args, .argCount, pReleaseId)
-        }
-
-        If (pGroupId '= "") {
-            Set whereList = whereList_$ListBuild("GroupId = ?")
-            Do ..AddArgument(.args, .argCount, pGroupId)
-        }
-
-        Set query = ..BuildQuery(sql, whereList, "")
-        Set tSC = ..ExecuteQuery(query, .args, argCount, .rset)
-        $$$ThrowOnError(tSC)
-
-        If rset.%Next() {
-            Set pResult.GroupId = rset.%Get("GroupId")
-            Set pResult.GroupName = rset.%Get("GroupName")
-            Set pResult.GroupType = rset.%Get("GroupType")
-            Set pResult.Version = rset.%Get("Version")
-        }
-
-        Return $$$OK
-    } Catch ex {
-        Return $$$ERROR($$$GeneralError, ex.DisplayString())
-    }
-}
-
 Method GetGroupMembers(pGroupId As %String = "", pReleaseId As %String = "", pLang As %String = "", pLimit As %Integer = 100, pOffset As %Integer = 0, Output pResult As Terminology.Loinc.DTO.GroupMemberResult) As %Status
 {
     Set pResult = ##class(Terminology.Loinc.DTO.GroupMemberResult).%New()
@@ -320,7 +282,7 @@ Method GetGroupMembers(pGroupId As %String = "", pReleaseId As %String = "", pLa
         Set joinList = ""
         Set argCount = 0
 
-        Set sql = "SELECT gm.%ID, gm.GroupId, gm.LoincNum, d.DisplayType, d.RankOrder, d.Display "_
+        Set sql = "SELECT gm.%ID, gm.GroupId, gm.LoincNum, d.Display "_
                   "FROM Terminology_Loinc.GroupMember gm "_
                   "LEFT JOIN Terminology_Loinc.Display d "_
                   "ON d.ReleaseId = gm.ReleaseId AND d.LoincNum = gm.LoincNum "
@@ -359,8 +321,6 @@ Method GetGroupMembers(pGroupId As %String = "", pReleaseId As %String = "", pLa
             Set item = ##class(Terminology.Loinc.DTO.GroupMemberItem).%New()
             Set item.GroupId = rset.%Get("GroupId")
             Set item.LoincNum = rset.%Get("LoincNum")
-            Set item.DisplayType = rset.%Get("DisplayType")
-            Set item.RankOrder = rset.%Get("RankOrder")
             Set item.Display = rset.%Get("Display")
             Do pResult.Items.Insert(item)
             Set added = added + 1
@@ -402,35 +362,6 @@ Method ValidateCode(pReleaseId As %String = "", pCode As %String = "", Output pR
             Set pResult.Exists = 0
             Set pResult.Status = ""
             Set pResult.Active = 0
-        }
-
-        Return $$$OK
-    } Catch ex {
-        Return $$$ERROR($$$GeneralError, ex.DisplayString())
-    }
-}
-
-/// Determines the directional subsumption relationship using the precomputed LOINC closure table.
-Method GetSubsumptionRelation(pReleaseId As %String = "", pHierarchyType As %String = "", pCodeA As %String = "", pCodeB As %String = "", Output pRelationship As %String) As %Status
-{
-    Set pRelationship = "not-subsumed"
-
-    Try {
-        Set effectiveHierarchyType = $Select(pHierarchyType'="":pHierarchyType, 1:"COMPONENTBYSYSTEM")
-
-        Set tSC = ..ClosureRelationExists(pReleaseId, effectiveHierarchyType, pCodeA, pCodeB, .exists)
-        $$$ThrowOnError(tSC)
-
-        If exists {
-            Set pRelationship = "subsumes"
-            Return $$$OK
-        }
-
-        Set tSC = ..ClosureRelationExists(pReleaseId, effectiveHierarchyType, pCodeB, pCodeA, .exists)
-        $$$ThrowOnError(tSC)
-
-        If exists {
-            Set pRelationship = "subsumed-by"
         }
 
         Return $$$OK
@@ -530,47 +461,6 @@ Method ExecuteQuery(pQuery As %String, ByRef pArgs, pArgCount As %Integer, Outpu
             Return $$$ERROR($$$GeneralError, "Too many SQL arguments")
         }
 
-        Return $$$OK
-    } Catch ex {
-        Return $$$ERROR($$$GeneralError, ex.DisplayString())
-    }
-}
-
-/// Checks whether one LOINC code appears as an ancestor of another in the selected hierarchy.
-Method ClosureRelationExists(pReleaseId As %String, pHierarchyType As %String, pAncestorCode As %String, pDescendantCode As %String, Output pExists As %Boolean) As %Status [ Private ]
-{
-    Set pExists = 0
-
-    Try {
-        Set whereList = ""
-        Set argCount = 0
-        Set sql = "SELECT %ID FROM Terminology_Loinc.Closure "
-
-        If (pReleaseId '= "") {
-            Set whereList = whereList_$ListBuild("ReleaseId = ?")
-            Do ..AddArgument(.args, .argCount, pReleaseId)
-        }
-
-        If (pHierarchyType '= "") {
-            Set whereList = whereList_$ListBuild("HierarchyType = ?")
-            Do ..AddArgument(.args, .argCount, pHierarchyType)
-        }
-
-        If (pAncestorCode '= "") {
-            Set whereList = whereList_$ListBuild("AncestorCode = ?")
-            Do ..AddArgument(.args, .argCount, pAncestorCode)
-        }
-
-        If (pDescendantCode '= "") {
-            Set whereList = whereList_$ListBuild("DescendantCode = ?")
-            Do ..AddArgument(.args, .argCount, pDescendantCode)
-        }
-
-        Set query = ..BuildQuery(sql, whereList, "")
-        Set tSC = ..ExecuteQuery(query, .args, argCount, .rset)
-        $$$ThrowOnError(tSC)
-
-        Set pExists = rset.%Next()
         Return $$$OK
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
