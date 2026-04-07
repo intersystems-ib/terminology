@@ -13,9 +13,9 @@ Build a terminology server on InterSystems IRIS for Health that:
 
 This file explains how the repository is structured and how it currently works.
 
-For setup steps, use [docs/getting-started.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/getting-started.md).
-For a narrative walkthrough, use [docs/how-it-works.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/how-it-works.md).
-For contribution rules, use [CONVENTIONS.md](/Users/afuentes/Documents/ISC/workspace/terminology/CONVENTIONS.md).
+For setup steps, use [docs/getting-started.md](docs/getting-started.md).
+For a narrative walkthrough, use [docs/how-it-works.md](docs/how-it-works.md).
+For contribution rules, use [CONVENTIONS.md](CONVENTIONS.md).
 
 ## Current Implemented Architecture
 

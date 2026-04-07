@@ -75,8 +75,8 @@ Notes:
 
 The repository includes:
 
-- [iris/shared/sql/sql-tuning-indexes.sql](/Users/afuentes/Documents/ISC/workspace/terminology/iris/shared/sql/sql-tuning-indexes.sql)
-- [iris/shared/sql/reset-terminology-data.sql](/Users/afuentes/Documents/ISC/workspace/terminology/iris/shared/sql/reset-terminology-data.sql)
+- [iris/shared/sql/sql-tuning-indexes.sql](iris/shared/sql/sql-tuning-indexes.sql)
+- [iris/shared/sql/reset-terminology-data.sql](iris/shared/sql/reset-terminology-data.sql)
 
 To load the tuning script in IRIS:
 
@@ -99,7 +99,7 @@ Use the reset script only in local development environments.
 
 Use:
 
-- [docs/http/snomed-native.http](/Users/afuentes/Documents/ISC/workspace/terminology/docs/http/snomed-native.http)
+- [docs/http/snomed-native.http](docs/http/snomed-native.http)
 
 Recommended initial checks:
 
@@ -112,7 +112,7 @@ Recommended initial checks:
 
 Use:
 
-- [docs/http/snomed-fhir-r4.http](/Users/afuentes/Documents/ISC/workspace/terminology/docs/http/snomed-fhir-r4.http)
+- [docs/http/snomed-fhir-r4.http](docs/http/snomed-fhir-r4.http)
 
 Recommended initial checks:
 
@@ -126,7 +126,7 @@ Recommended initial checks:
 
 Use:
 
-- [docs/sql/snomed-query-examples.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/sql/snomed-query-examples.md)
+- [docs/sql/snomed-query-examples.md](docs/sql/snomed-query-examples.md)
 
 This is useful when you want to inspect the stored SNOMED and derived data directly.
 
@@ -179,10 +179,10 @@ The `/nodelete` flag is useful during development because it keeps the loaded te
 
 After you verify the stack, read:
 
-1. [docs/how-it-works.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/how-it-works.md)
-2. [ARCHITECTURE.md](/Users/afuentes/Documents/ISC/workspace/terminology/ARCHITECTURE.md)
-3. [FHIR_SCOPE.md](/Users/afuentes/Documents/ISC/workspace/terminology/FHIR_SCOPE.md)
-4. [CONVENTIONS.md](/Users/afuentes/Documents/ISC/workspace/terminology/CONVENTIONS.md)
+1. [docs/how-it-works.md](docs/how-it-works.md)
+2. [ARCHITECTURE.md](ARCHITECTURE.md)
+3. [FHIR_SCOPE.md](FHIR_SCOPE.md)
+4. [CONVENTIONS.md](CONVENTIONS.md)
 
 ## Troubleshooting Focus Areas
 
@@ -193,4 +193,4 @@ If the system does not behave as expected, start by checking:
 - whether preferred term and closure build steps completed
 - whether the `releaseId`, `lang` and `dialect` values used in requests match the data actually loaded
 
-The next place to look is [docs/how-it-works.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/how-it-works.md), which explains the flow from release intake to API query handling.
+The next place to look is [docs/how-it-works.md](docs/how-it-works.md), which explains the flow from release intake to API query handling.

@@ -147,9 +147,9 @@ That is why you will see both:
 
 A practical reading order for a developer is:
 
-1. [README.md](/Users/afuentes/Documents/ISC/workspace/terminology/README.md)
-2. [docs/getting-started.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/getting-started.md)
-3. [ARCHITECTURE.md](/Users/afuentes/Documents/ISC/workspace/terminology/ARCHITECTURE.md)
+1. [README.md](README.md)
+2. [docs/getting-started.md](docs/getting-started.md)
+3. [ARCHITECTURE.md](ARCHITECTURE.md)
 4. `iris/src/Terminology/Production/API.cls`
 5. `iris/src/Terminology/Snomed/SnomedRepository.cls`
 6. `iris/src/Terminology/Core/TermService.cls`

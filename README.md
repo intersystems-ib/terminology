@@ -66,31 +66,31 @@ docker compose up -d
 
 7. Verify the server using the HTTP examples under `docs/http/`.
 
-8. Run the SNOMED unit tests as described in [docs/getting-started.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/getting-started.md).
+8. Run the SNOMED unit tests as described in [docs/getting-started.md](docs/getting-started.md).
 
-For the full setup and verification flow, see [docs/getting-started.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/getting-started.md).
+For the full setup and verification flow, see [docs/getting-started.md](docs/getting-started.md).
 
 ## Documentation Map
 
-- [ARCHITECTURE.md](/Users/afuentes/Documents/ISC/workspace/terminology/ARCHITECTURE.md): current implementation shape, runtime flow, target direction
-- [docs/getting-started.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/getting-started.md): build, start, load and verify the project
-- [docs/how-it-works.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/how-it-works.md): narrative walkthrough for developers new to the repo
-- [FHIR_SCOPE.md](/Users/afuentes/Documents/ISC/workspace/terminology/FHIR_SCOPE.md): current FHIR terminology scope and rollout approach
-- [CONVENTIONS.md](/Users/afuentes/Documents/ISC/workspace/terminology/CONVENTIONS.md): coding, layering and documentation rules
-- [docs/http/snomed-native.http](/Users/afuentes/Documents/ISC/workspace/terminology/docs/http/snomed-native.http): native API request examples
-- [docs/http/snomed-fhir-r4.http](/Users/afuentes/Documents/ISC/workspace/terminology/docs/http/snomed-fhir-r4.http): FHIR API request examples
-- [docs/sql/snomed-query-examples.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/sql/snomed-query-examples.md): direct SQL examples over the SNOMED model
+- [ARCHITECTURE.md](ARCHITECTURE.md): current implementation shape, runtime flow, target direction
+- [docs/getting-started.md](docs/getting-started.md): build, start, load and verify the project
+- [docs/how-it-works.md](docs/how-it-works.md): narrative walkthrough for developers new to the repo
+- [FHIR_SCOPE.md](FHIR_SCOPE.md): current FHIR terminology scope and rollout approach
+- [CONVENTIONS.md](CONVENTIONS.md): coding, layering and documentation rules
+- [docs/http/snomed-native.http](docs/http/snomed-native.http): native API request examples
+- [docs/http/snomed-fhir-r4.http](docs/http/snomed-fhir-r4.http): FHIR API request examples
+- [docs/sql/snomed-query-examples.md](docs/sql/snomed-query-examples.md): direct SQL examples over the SNOMED model
 
 ## Typical Developer Path
 
 If you are new to the project, the shortest useful path is:
 
 1. Read this file to understand the project boundary.
-2. Read [docs/getting-started.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/getting-started.md) and run the stack.
+2. Read [docs/getting-started.md](docs/getting-started.md) and run the stack.
 3. Use the `.http` files in `docs/http/` to verify the native and FHIR endpoints.
-4. Read [docs/how-it-works.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/how-it-works.md) to understand the end-to-end lifecycle.
-5. Read [ARCHITECTURE.md](/Users/afuentes/Documents/ISC/workspace/terminology/ARCHITECTURE.md) before making structural changes.
-6. Read [CONVENTIONS.md](/Users/afuentes/Documents/ISC/workspace/terminology/CONVENTIONS.md) before contributing code.
+4. Read [docs/how-it-works.md](docs/how-it-works.md) to understand the end-to-end lifecycle.
+5. Read [ARCHITECTURE.md](ARCHITECTURE.md) before making structural changes.
+6. Read [CONVENTIONS.md](CONVENTIONS.md) before contributing code.
 
 ## Reference Implementation Goal
 

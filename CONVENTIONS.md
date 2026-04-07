@@ -145,10 +145,10 @@ Documentation is part of the implementation, especially because this repository 
 
 When code or behavior changes, update the relevant docs:
 
-- architecture changes -> [ARCHITECTURE.md](/Users/afuentes/Documents/ISC/workspace/terminology/ARCHITECTURE.md)
-- setup or operational workflow changes -> [docs/getting-started.md](/Users/afuentes/Documents/ISC/workspace/terminology/docs/getting-started.md)
-- onboarding or scope changes -> [README.md](/Users/afuentes/Documents/ISC/workspace/terminology/README.md)
-- FHIR scope changes -> [FHIR_SCOPE.md](/Users/afuentes/Documents/ISC/workspace/terminology/FHIR_SCOPE.md)
+- architecture changes -> [ARCHITECTURE.md](ARCHITECTURE.md)
+- setup or operational workflow changes -> [docs/getting-started.md](docs/getting-started.md)
+- onboarding or scope changes -> [README.md](README.md)
+- FHIR scope changes -> [FHIR_SCOPE.md](FHIR_SCOPE.md)
 - unresolved design issues -> `docs/open-questions.md`
 
 Diagram placement rule:
@@ -193,9 +193,9 @@ Prefer small commits with clear intent:
 
 When asked to change code:
 
-1. read [ARCHITECTURE.md](/Users/afuentes/Documents/ISC/workspace/terminology/ARCHITECTURE.md)
-2. read [CONVENTIONS.md](/Users/afuentes/Documents/ISC/workspace/terminology/CONVENTIONS.md)
-3. read [FHIR_SCOPE.md](/Users/afuentes/Documents/ISC/workspace/terminology/FHIR_SCOPE.md) if the change touches FHIR
+1. read [ARCHITECTURE.md](ARCHITECTURE.md)
+2. read [CONVENTIONS.md](CONVENTIONS.md)
+3. read [FHIR_SCOPE.md](FHIR_SCOPE.md) if the change touches FHIR
 4. avoid broad refactors unless requested
 5. explain assumptions in comments or docs
 6. preserve current working SNOMED behavior unless explicitly changing it
