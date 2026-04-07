@@ -38,6 +38,32 @@ Method GetDescendants(pCode As %String = "", pReleaseId As %String = "", pHierar
     Return ..GetRepository().GetDescendants(pCode, pReleaseId, pHierarchyType, pMaxDepth, pLimit, pOffset, .pResult)
 }
 
+/// Applies LOINC subsumption semantics over the closure table.
+/// FHIR `CodeSystem/$subsumes` does not carry a hierarchy selector, so LOINC defaults to
+/// `COMPONENTBYSYSTEM` until the common contract grows a neutral hierarchy parameter.
+Method Subsumes(pReleaseId As %String = "", pView As %String = "", pCodeA As %String = "", pCodeB As %String = "", Output pResult As Terminology.Snomed.DTO.SubsumesResult) As %Status
+{
+    Set pResult = ##class(Terminology.Snomed.DTO.SubsumesResult).%New()
+
+    If (pCodeA = "") || (pCodeB = "") {
+        Set pResult.Relationship = "not-subsumed"
+        Return $$$OK
+    }
+
+    If (pCodeA = pCodeB) {
+        Set pResult.Relationship = "equivalent"
+        Return $$$OK
+    }
+
+    Set hierarchyType = $Select(pView'="":pView, 1:"COMPONENTBYSYSTEM")
+
+    Set tSC = ..GetRepository().GetSubsumptionRelation(pReleaseId, hierarchyType, pCodeA, pCodeB, .relationship)
+    $$$ThrowOnError(tSC)
+
+    Set pResult.Relationship = relationship
+    Return $$$OK
+}
+
 /// LOINC-native group listing.
 Method GetGroups(pReleaseId As %String = "", pLimit As %Integer = 100, pOffset As %Integer = 0, Output pResult As Terminology.Loinc.DTO.GroupResult) As %Status
 {

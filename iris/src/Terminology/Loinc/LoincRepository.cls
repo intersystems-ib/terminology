@@ -370,6 +370,35 @@ Method ValidateCode(pReleaseId As %String = "", pCode As %String = "", Output pR
     }
 }
 
+/// Determines the directional subsumption relationship using the precomputed LOINC closure table.
+Method GetSubsumptionRelation(pReleaseId As %String = "", pHierarchyType As %String = "", pCodeA As %String = "", pCodeB As %String = "", Output pRelationship As %String) As %Status
+{
+    Set pRelationship = "not-subsumed"
+
+    Try {
+        Set effectiveHierarchyType = $Select(pHierarchyType'="":pHierarchyType, 1:"COMPONENTBYSYSTEM")
+
+        Set tSC = ..ClosureRelationExists(pReleaseId, effectiveHierarchyType, pCodeA, pCodeB, .exists)
+        $$$ThrowOnError(tSC)
+
+        If exists {
+            Set pRelationship = "subsumes"
+            Return $$$OK
+        }
+
+        Set tSC = ..ClosureRelationExists(pReleaseId, effectiveHierarchyType, pCodeB, pCodeA, .exists)
+        $$$ThrowOnError(tSC)
+
+        If exists {
+            Set pRelationship = "subsumed-by"
+        }
+
+        Return $$$OK
+    } Catch ex {
+        Return $$$ERROR($$$GeneralError, ex.DisplayString())
+    }
+}
+
 Method GetClosureList(pCode As %String, pReleaseId As %String, pHierarchyType As %String, pMode As %String, pMaxDepth As %Integer, pLimit As %Integer, pOffset As %Integer, Output pResult As Terminology.Loinc.DTO.ClosureResult) As %Status [ Private ]
 {
     Set pResult = ##class(Terminology.Loinc.DTO.ClosureResult).%New()
@@ -461,6 +490,47 @@ Method ExecuteQuery(pQuery As %String, ByRef pArgs, pArgCount As %Integer, Outpu
             Return $$$ERROR($$$GeneralError, "Too many SQL arguments")
         }
 
+        Return $$$OK
+    } Catch ex {
+        Return $$$ERROR($$$GeneralError, ex.DisplayString())
+    }
+}
+
+/// Checks whether one LOINC code appears as an ancestor of another in the selected hierarchy.
+Method ClosureRelationExists(pReleaseId As %String, pHierarchyType As %String, pAncestorCode As %String, pDescendantCode As %String, Output pExists As %Boolean) As %Status [ Private ]
+{
+    Set pExists = 0
+
+    Try {
+        Set whereList = ""
+        Set argCount = 0
+        Set sql = "SELECT %ID FROM Terminology_Loinc.Closure "
+
+        If (pReleaseId '= "") {
+            Set whereList = whereList_$ListBuild("ReleaseId = ?")
+            Do ..AddArgument(.args, .argCount, pReleaseId)
+        }
+
+        If (pHierarchyType '= "") {
+            Set whereList = whereList_$ListBuild("HierarchyType = ?")
+            Do ..AddArgument(.args, .argCount, pHierarchyType)
+        }
+
+        If (pAncestorCode '= "") {
+            Set whereList = whereList_$ListBuild("AncestorCode = ?")
+            Do ..AddArgument(.args, .argCount, pAncestorCode)
+        }
+
+        If (pDescendantCode '= "") {
+            Set whereList = whereList_$ListBuild("DescendantCode = ?")
+            Do ..AddArgument(.args, .argCount, pDescendantCode)
+        }
+
+        Set query = ..BuildQuery(sql, whereList, "")
+        Set tSC = ..ExecuteQuery(query, .args, argCount, .rset)
+        $$$ThrowOnError(tSC)
+
+        Set pExists = rset.%Next()
         Return $$$OK
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())

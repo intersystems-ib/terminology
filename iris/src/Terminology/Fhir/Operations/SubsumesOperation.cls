@@ -83,7 +83,8 @@ ClassMethod ParseSubsumesInputs(pRequest As HS.FHIRServer.API.Data.Request, Outp
 }
 
 /// Builds a minimal Parameters resource for successful subsumes responses.
-ClassMethod BuildSubsumesResponse(pResult As Terminology.Snomed.DTO.SubsumesResult) As %DynamicObject [ Private ]
+/// The operation only needs the normalized relationship string, so the DTO is left untyped.
+ClassMethod BuildSubsumesResponse(pResult) As %DynamicObject [ Private ]
 {
     Set response = ##class(%DynamicObject).%New()
     Set parameters = ##class(%DynamicArray).%New()

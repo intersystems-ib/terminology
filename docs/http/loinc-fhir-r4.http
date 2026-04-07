@@ -4,6 +4,7 @@
 @systemUrl = http://loinc.org
 @codeSystemId = loinc
 @conceptCode = 718-7
+@ancestorCode = LP392452-1
 
 ### CapabilityStatement
 GET {{baseUrl}}/metadata
@@ -61,16 +62,24 @@ Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
 
 ### CodeSystem $subsumes by code pair
-# Not supported yet for LOINC because the current adapter does not implement the common subsumes contract.
-# GET {{baseUrl}}/CodeSystem/$subsumes?system={{systemUrl}}&codeA={{conceptCode}}&codeB=4548-4
-# Accept: application/fhir+json
-# Authorization: Basic {{username}}:{{password}}
+GET {{baseUrl}}/CodeSystem/$subsumes?system={{systemUrl}}&codeA={{ancestorCode}}&codeB={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
 
 ### CodeSystem instance $subsumes by code pair
-# Not supported yet for LOINC because the current adapter does not implement the common subsumes contract.
-# GET {{baseUrl}}/CodeSystem/{{codeSystemId}}/$subsumes?codeA={{conceptCode}}&codeB=4548-4
-# Accept: application/fhir+json
-# Authorization: Basic {{username}}:{{password}}
+GET {{baseUrl}}/CodeSystem/{{codeSystemId}}/$subsumes?codeA={{ancestorCode}}&codeB={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem $subsumes equivalent example
+GET {{baseUrl}}/CodeSystem/$subsumes?system={{systemUrl}}&codeA={{conceptCode}}&codeB={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem $subsumes reverse direction
+GET {{baseUrl}}/CodeSystem/$subsumes?system={{systemUrl}}&codeA={{conceptCode}}&codeB={{ancestorCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
 
 ### ValueSet search
 # Not supported yet for LOINC in the current FHIR layer.

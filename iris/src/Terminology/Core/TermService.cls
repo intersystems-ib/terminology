@@ -17,7 +17,8 @@ Method ValidateCode(pSystem As %String = "snomed", pVersion As %String = "", pCo
 }
 
 /// Common subsumption operation.
-Method Subsumes(pSystem As %String = "snomed", pVersion As %String = "", pView As %String = "", pCodeA As %String = "", pCodeB As %String = "", Output pResult As Terminology.Snomed.DTO.SubsumesResult) As %Status
+/// Output is intentionally untyped because each adapter may reuse or define its own result DTO.
+Method Subsumes(pSystem As %String = "snomed", pVersion As %String = "", pView As %String = "", pCodeA As %String = "", pCodeB As %String = "", Output pResult) As %Status
 {
     Return ..ResolveAdapter(pSystem).Subsumes(pVersion, pView, pCodeA, pCodeB, .pResult)
 }
