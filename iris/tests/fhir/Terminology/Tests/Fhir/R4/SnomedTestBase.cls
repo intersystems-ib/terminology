@@ -1,5 +1,5 @@
-/// Shared FHIR R4 unit test helpers without terminology-specific fixture ownership.
-Class Terminology.Tests.Fhir.R4.TestBase Extends %UnitTest.TestCase
+/// Shared FHIR R4 helper methods combined with the synthetic SNOMED fixture.
+Class Terminology.Tests.Fhir.R4.SnomedTestBase Extends Terminology.Tests.Snomed.TestBase
 {
 
 /// Calls the deployed FHIR R4 API over loopback HTTP and parses the JSON response.
@@ -44,36 +44,6 @@ Method InvokeFhirApi(pPath As %String, Output pResponseObject As %DynamicObject,
     }
 }
 
-/// Applies the small subset of URL encoding needed by the current test parameters.
-Method UrlEncode(pValue As %String = "") As %String
-{
-    Set text = $Get(pValue)
-    Set text = $Replace(text, "%", "%25")
-    Set text = $Replace(text, " ", "%20")
-    Set text = $Replace(text, "?", "%3F")
-    Set text = $Replace(text, "&", "%26")
-    Set text = $Replace(text, "=", "%3D")
-    Set text = $Replace(text, "/", "%2F")
-    Return text
-}
-
-/// Reads the full HTTP response body into one string.
-Method ReadHttpResponseBody(pResponse As %Net.HttpResponse) As %String
-{
-    Set text = ""
-    If '$IsObject(pResponse) {
-        Return text
-    }
-
-    If $IsObject(pResponse.Data) {
-        While 'pResponse.Data.AtEnd {
-            Set text = text_pResponse.Data.Read()
-        }
-    }
-
-    Return text
-}
-
 /// Returns the first Parameters.parameter item with the requested name.
 Method GetNamedParameter(pObject As %DynamicObject, pName As %String) As %DynamicObject
 {
@@ -94,17 +64,6 @@ Method GetNamedParameter(pObject As %DynamicObject, pName As %String) As %Dynami
     }
 
     Return ""
-}
-
-/// Returns one item from a JSON array property by zero-based index.
-Method GetArrayItem(pObject As %DynamicObject, pProperty As %String, pIndex As %Integer = 0) As %DynamicObject
-{
-    Set array = pObject.%Get(pProperty)
-    If '$IsObject(array) {
-        Return ""
-    }
-
-    Return array.%Get(pIndex)
 }
 
 /// Returns the first Bundle.entry.resource item whose property matches the requested value.

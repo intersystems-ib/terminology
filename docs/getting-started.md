@@ -142,6 +142,7 @@ Notes:
 
 - these tests seed their own synthetic terminology fixture data under dedicated `ReleaseId` values
 - the LOINC tests seed their own synthetic release rows under `ReleaseId = UT-LOINC-20260401`
+- the FHIR suite is split into metadata-only tests plus SNOMED-backed and LOINC-backed API classes
 - they can be run with or without a full SNOMED or LOINC catalog already loaded
 - they do require the local IRIS stack to be running and the native terminology web application to be available
 

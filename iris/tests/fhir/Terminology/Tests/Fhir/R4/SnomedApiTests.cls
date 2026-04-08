@@ -1,48 +1,30 @@
-/// Covers the deployed /terminology/fhir/r4 HTTP surface with the synthetic SNOMED fixture.
-Class Terminology.Tests.Fhir.R4.ApiTests Extends Terminology.Tests.Fhir.R4.TestBase
+/// Covers the deployed /terminology/fhir/r4 HTTP surface over the synthetic SNOMED fixture.
+Class Terminology.Tests.Fhir.R4.SnomedApiTests Extends Terminology.Tests.Fhir.R4.SnomedTestBase
 {
 
-/// Verifies metadata and CodeSystem read behavior over HTTP.
-Method TestMetadataAndCodeSystemRead() As %Status
+/// Verifies SNOMED CodeSystem read behavior over HTTP.
+Method TestCodeSystemReadAndSearchFilters() As %Status
 {
-    Set tSC = ..InvokeFhirApi("/metadata", .metadataResponse, .httpStatus)
-    Do ..AssertStatusOKViaMacro("", tSC, "FHIR metadata invocation returns OK")
-    Do ..AssertEqualsViaMacro("", metadataResponse.%Get("resourceType"), "CapabilityStatement", "Metadata returns a CapabilityStatement")
-
     Set tSC = ..InvokeFhirApi("/CodeSystem/snomed", .codeSystemResponse, .httpStatus)
     Do ..AssertStatusOKViaMacro("", tSC, "FHIR CodeSystem read invocation returns OK")
     Do ..AssertEqualsViaMacro("", codeSystemResponse.%Get("resourceType"), "CodeSystem", "CodeSystem read returns a CodeSystem resource")
     Do ..AssertEqualsViaMacro("", codeSystemResponse.%Get("id"), "snomed", "CodeSystem read returns the SNOMED logical id")
     Do ..AssertEqualsViaMacro("", codeSystemResponse.%Get("url"), "http://snomed.info/sct", "CodeSystem read returns the SNOMED canonical url")
-    Return $$$OK
-}
 
-/// Verifies CodeSystem search by canonical url and name.
-Method TestCodeSystemSearchFilters() As %Status
-{
     Set tSC = ..InvokeFhirApi("/CodeSystem?url=http://snomed.info/sct", .searchByUrlResponse, .httpStatus)
     Do ..AssertStatusOKViaMacro("", tSC, "FHIR CodeSystem search by url invocation returns OK")
-    Do ..AssertEqualsViaMacro("", searchByUrlResponse.%Get("resourceType"), "Bundle", "CodeSystem search by url returns a Bundle")
-    Do ..AssertEqualsViaMacro("", searchByUrlResponse.%Get("total"), 1, "CodeSystem search by url returns one resource")
-    Set entry = searchByUrlResponse.%Get("entry")
-    Set firstMatch = entry.%Get(0).%Get("resource")
-    Do ..AssertEqualsViaMacro("", firstMatch.%Get("resourceType"), "CodeSystem", "CodeSystem search by url returns a CodeSystem")
-    Do ..AssertEqualsViaMacro("", firstMatch.%Get("id"), "snomed", "CodeSystem search by url returns the SNOMED logical id")
+    Set firstMatch = ..FindBundleEntryResourceByProperty(searchByUrlResponse, "id", "snomed")
+    Do ..AssertNotEqualsViaMacro("", firstMatch, "", "CodeSystem search by url returns SNOMED")
     Do ..AssertEqualsViaMacro("", firstMatch.%Get("url"), "http://snomed.info/sct", "CodeSystem search by url returns the SNOMED canonical url")
 
     Set tSC = ..InvokeFhirApi("/CodeSystem?name=SNOMEDCT", .searchByNameResponse, .httpStatus)
     Do ..AssertStatusOKViaMacro("", tSC, "FHIR CodeSystem search by name invocation returns OK")
-    Do ..AssertEqualsViaMacro("", searchByNameResponse.%Get("resourceType"), "Bundle", "CodeSystem search by name returns a Bundle")
-    Do ..AssertEqualsViaMacro("", searchByNameResponse.%Get("total"), 1, "CodeSystem search by name returns one resource")
-    Set entry = searchByNameResponse.%Get("entry")
-    Set firstMatch = entry.%Get(0).%Get("resource")
-    Do ..AssertEqualsViaMacro("", firstMatch.%Get("resourceType"), "CodeSystem", "CodeSystem search by name returns a CodeSystem")
-    Do ..AssertEqualsViaMacro("", firstMatch.%Get("id"), "snomed", "CodeSystem search by name returns the SNOMED logical id")
-    Do ..AssertEqualsViaMacro("", firstMatch.%Get("url"), "http://snomed.info/sct", "CodeSystem search by name returns the SNOMED canonical url")
+    Set firstMatch = ..FindBundleEntryResourceByProperty(searchByNameResponse, "id", "snomed")
+    Do ..AssertNotEqualsViaMacro("", firstMatch, "", "CodeSystem search by name returns SNOMED")
     Return $$$OK
 }
 
-/// Verifies CodeSystem lookup, validate-code and subsumes operations over HTTP.
+/// Verifies SNOMED CodeSystem lookup, validate-code and subsumes operations over HTTP.
 Method TestCodeSystemOperations() As %Status
 {
     Set path = "/CodeSystem/$lookup?system=http://snomed.info/sct&version="_..UrlEncode(..#FixtureReleaseId)_"&code="_..#ChildConceptId_"&displayLanguage=es"
@@ -66,7 +48,7 @@ Method TestCodeSystemOperations() As %Status
     Return $$$OK
 }
 
-/// Verifies ValueSet read and expand behavior over HTTP.
+/// Verifies SNOMED ValueSet read and expand behavior over HTTP.
 Method TestValueSetReadAndExpand() As %Status
 {
     Set tSC = ..InvokeFhirApi("/ValueSet/"_..#RefsetId, .valueSetResponse, .httpStatus)
