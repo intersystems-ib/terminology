@@ -625,23 +625,11 @@ Method ExecuteQuery(pQuery As %String, ByRef pArgs, pArgCount As %Integer, Outpu
         Set statement = ##class(%SQL.Statement).%New()
         $$$ThrowOnError(statement.%Prepare(pQuery))
 
-        Set pResultSet = $Case(pArgCount,
-            0: statement.%Execute(),
-            1: statement.%Execute($Get(pArgs(1))),
-            2: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2))),
-            3: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2)), $Get(pArgs(3))),
-            4: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2)), $Get(pArgs(3)), $Get(pArgs(4))),
-            5: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2)), $Get(pArgs(3)), $Get(pArgs(4)), $Get(pArgs(5))),
-            6: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2)), $Get(pArgs(3)), $Get(pArgs(4)), $Get(pArgs(5)), $Get(pArgs(6))),
-            7: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2)), $Get(pArgs(3)), $Get(pArgs(4)), $Get(pArgs(5)), $Get(pArgs(6)), $Get(pArgs(7))),
-            8: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2)), $Get(pArgs(3)), $Get(pArgs(4)), $Get(pArgs(5)), $Get(pArgs(6)), $Get(pArgs(7)), $Get(pArgs(8))),
-            9: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2)), $Get(pArgs(3)), $Get(pArgs(4)), $Get(pArgs(5)), $Get(pArgs(6)), $Get(pArgs(7)), $Get(pArgs(8)), $Get(pArgs(9))),
-            10: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2)), $Get(pArgs(3)), $Get(pArgs(4)), $Get(pArgs(5)), $Get(pArgs(6)), $Get(pArgs(7)), $Get(pArgs(8)), $Get(pArgs(9)), $Get(pArgs(10))),
-            : $$$NULLOREF
-        )
-
-        If pResultSet=$$$NULLOREF {
-            Return $$$ERROR($$$GeneralError, "Too many SQL arguments")
+        If pArgCount>0 {
+            Set pArgs = pArgCount
+            Set pResultSet = statement.%Execute(pArgs...)
+        } Else {
+            Set pResultSet = statement.%Execute()
         }
 
         Return $$$OK
@@ -694,6 +682,7 @@ Method ClosureRelationExists(pReleaseId As %String, pHierarchyType As %String, p
 Method AddArgument(ByRef pArgs, ByRef pArgCount As %Integer, pValue As %String = "") As %Status [ Private ]
 {
     Set pArgCount = pArgCount + 1
+    Set pArgs = pArgCount
     Set pArgs(pArgCount) = pValue
     Return $$$OK
 }
