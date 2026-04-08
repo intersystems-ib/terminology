@@ -34,7 +34,7 @@ Accept: application/json
 Authorization: Basic {{username}}:{{password}}
 
 ### Get descendants in the component hierarchy
-GET {{baseUrl}}/codes/{{loincNum2}/descendants?releaseId={{releaseId}}&hierarchyType={{hierarchyType}}&maxDepth=10&limit=100&offset=0
+GET {{baseUrl}}/codes/{{loincNum2}}/descendants?releaseId={{releaseId}}&hierarchyType={{hierarchyType}}&maxDepth=10&limit=100&offset=0
 Accept: application/json
 Authorization: Basic {{username}}:{{password}}
 

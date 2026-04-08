@@ -135,13 +135,15 @@ This is useful when you want to inspect the stored SNOMED and derived data direc
 The repository includes initial `%UnitTest` suites for:
 
 - `Terminology.Tests.Snomed.*`
+- `Terminology.Tests.Loinc.*`
 - `Terminology.Tests.Fhir.R4.*`
 
 Notes:
 
-- these tests seed their own synthetic SNOMED fixture data under a dedicated `ReleaseId`
-- they can be run with or without a full SNOMED catalog already loaded
-- they do require the local IRIS stack to be running and the `/terminology/snomed` web application to be available
+- these tests seed their own synthetic terminology fixture data under dedicated `ReleaseId` values
+- the LOINC tests seed their own synthetic release rows under `ReleaseId = UT-LOINC-20260401`
+- they can be run with or without a full SNOMED or LOINC catalog already loaded
+- they do require the local IRIS stack to be running and the native terminology web application to be available
 
 Open an IRIS terminal in the container:
 
@@ -166,6 +168,7 @@ do ##class(%UnitTest.Manager).RunTest("<suite>", "/nodelete")
 Use:
 
 - `snomed` to run all tests under `iris/tests/snomed`
+- `loinc` to run all tests under `iris/tests/loinc`
 - `fhir` to run all tests under `iris/tests/fhir`
 - no suite argument to run all tests:
 
