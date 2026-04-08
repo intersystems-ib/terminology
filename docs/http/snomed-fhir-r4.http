@@ -79,8 +79,38 @@ GET {{baseUrl}}/ValueSet/{{valueSetId}}/$expand?displayLanguage=es&count=10&offs
 Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
 
+### ValueSet $expand by id first page
+GET {{baseUrl}}/ValueSet/{{valueSetId}}/$expand?displayLanguage=es&count=25&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by id second page
+GET {{baseUrl}}/ValueSet/{{valueSetId}}/$expand?displayLanguage=es&count=25&offset=25
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by id deep offset
+GET {{baseUrl}}/ValueSet/{{valueSetId}}/$expand?displayLanguage=es&count=25&offset=250
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
 ### ValueSet $expand by url
 GET {{baseUrl}}/ValueSet/$expand?url=http://snomed.info/sct?fhir_vs=refset/{{valueSetId}}&displayLanguage=es&count=10&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by url first page
+GET {{baseUrl}}/ValueSet/$expand?url=http://snomed.info/sct?fhir_vs=refset/{{valueSetId}}&displayLanguage=es&count=25&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by url second page
+GET {{baseUrl}}/ValueSet/$expand?url=http://snomed.info/sct?fhir_vs=refset/{{valueSetId}}&displayLanguage=es&count=25&offset=25
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by url small page size
+GET {{baseUrl}}/ValueSet/$expand?url=http://snomed.info/sct?fhir_vs=refset/{{valueSetId}}&displayLanguage=es&count=5&offset=0
 Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
 

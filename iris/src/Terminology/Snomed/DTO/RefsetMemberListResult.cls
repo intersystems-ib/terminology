@@ -5,6 +5,8 @@ Property Items As list Of Terminology.Snomed.DTO.RefsetMemberSummary(%JSONFIELDN
 
 Property Count As %Integer(%JSONFIELDNAME = "count");
 
+Property TotalCount As %Integer(%JSONFIELDNAME = "totalCount");
+
 Storage Default
 {
 <Data name="RefsetMemberListResultState">
@@ -14,6 +16,9 @@ Storage Default
 </Value>
 <Value name="2">
 <Value>Count</Value>
+</Value>
+<Value name="3">
+<Value>TotalCount</Value>
 </Value>
 </Data>
 <State>RefsetMemberListResultState</State>

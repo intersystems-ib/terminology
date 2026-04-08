@@ -101,7 +101,37 @@ GET {{baseUrl}}/ValueSet/$expand?url=http://loinc.org/vs/LG51020-2&displayLangua
 Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}
 
+### ValueSet $expand by url first page
+GET {{baseUrl}}/ValueSet/$expand?url=http://loinc.org/vs/LG51020-2&displayLanguage=es&count=25&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by url second page
+GET {{baseUrl}}/ValueSet/$expand?url=http://loinc.org/vs/LG51020-2&displayLanguage=es&count=25&offset=25
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by url small page size
+GET {{baseUrl}}/ValueSet/$expand?url=http://loinc.org/vs/LG51020-2&displayLanguage=es&count=5&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
 ### ValueSet $expand by id
 GET {{baseUrl}}/ValueSet/loinc-group-LG51020-2/$expand?displayLanguage=es&count=10&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by id first page
+GET {{baseUrl}}/ValueSet/loinc-group-LG51020-2/$expand?displayLanguage=es&count=25&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by id second page
+GET {{baseUrl}}/ValueSet/loinc-group-LG51020-2/$expand?displayLanguage=es&count=25&offset=25
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by id deep offset
+GET {{baseUrl}}/ValueSet/loinc-group-LG51020-2/$expand?displayLanguage=es&count=25&offset=250
 Accept: application/fhir+json
 Authorization: Basic {{username}}:{{password}}

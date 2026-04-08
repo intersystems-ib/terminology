@@ -5,6 +5,8 @@ Property Count As %Integer;
 
 Property Items As list Of Terminology.Loinc.DTO.GroupMemberItem;
 
+Property TotalCount As %Integer;
+
 Storage Default
 {
 <Data name="GroupMemberResultState">
@@ -14,6 +16,9 @@ Storage Default
 </Value>
 <Value name="2">
 <Value>Items</Value>
+</Value>
+<Value name="3">
+<Value>TotalCount</Value>
 </Value>
 </Data>
 <State>GroupMemberResultState</State>

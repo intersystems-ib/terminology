@@ -373,6 +373,57 @@ Method GetGroupMembers(pGroupId As %String = "", pReleaseId As %String = "", pLa
     }
 }
 
+Method GetExpandedGroupMembers(pGroupId As %String = "", pReleaseId As %String = "", pLang As %String = "", pLimit As %Integer = 100, pOffset As %Integer = 0, Output pResult As Terminology.Loinc.DTO.GroupMemberResult) As %Status
+{
+    Set pResult = ##class(Terminology.Loinc.DTO.GroupMemberResult).%New()
+    Try {
+        Set whereList = ""
+        Set argCount = 0
+        Set sql = "SELECT gm.%ID, gm.GroupId, gm.LoincNum "_
+                  "FROM Terminology_Loinc.GroupMember gm "
+        Set endSQL = "ORDER BY gm.LoincNum"
+
+        If (pReleaseId '= "") {
+            Set whereList = whereList_$ListBuild("gm.ReleaseId = ?")
+            Do ..AddArgument(.args, .argCount, pReleaseId)
+        }
+        If (pGroupId '= "") {
+            Set whereList = whereList_$ListBuild("gm.GroupId = ?")
+            Do ..AddArgument(.args, .argCount, pGroupId)
+        }
+
+        Set totalCount = 0
+        Set tSC = ..CountGroupMembers(whereList, .args, argCount, .totalCount)
+        $$$ThrowOnError(tSC)
+
+        Set limit = $Select(pLimit>0:pLimit,1:100)
+        Set offset = $Select(pOffset>0:pOffset,1:0)
+        Do ..AddArgument(.args, .argCount, limit)
+        Do ..AddArgument(.args, .argCount, offset)
+
+        Set query = ..BuildQuery(sql, whereList, endSQL_" LIMIT ? OFFSET ?")
+        Set tSC = ..ExecuteQuery(query, .args, argCount, .rset)
+        $$$ThrowOnError(tSC)
+
+        While rset.%Next() {
+            Set item = ##class(Terminology.Loinc.DTO.GroupMemberItem).%New()
+            Set item.GroupId = rset.%Get("GroupId")
+            Set item.LoincNum = rset.%Get("LoincNum")
+
+            Set tSC = ..PopulateBestDisplayForMember(item, pReleaseId, pLang)
+            $$$ThrowOnError(tSC)
+
+            Do pResult.Items.Insert(item)
+        }
+
+        Set pResult.Count = $Select($IsObject(pResult.Items):pResult.Items.Count(),1:0)
+        Set pResult.TotalCount = totalCount
+        Return $$$OK
+    } Catch ex {
+        Return $$$ERROR($$$GeneralError, ex.DisplayString())
+    }
+}
+
 Method ValidateCode(pReleaseId As %String = "", pCode As %String = "", Output pResult As Terminology.Loinc.DTO.ValidateCodeResult) As %Status
 {
     Set pResult = ##class(Terminology.Loinc.DTO.ValidateCodeResult).%New()
@@ -503,6 +554,69 @@ Method BuildQuery(pSql As %String, pWhereList As %List = "", pEndSql As %String 
         Quit pSql_"WHERE "_$ListToString(pWhereList," AND ")_" "_pEndSql
     }
     Quit pSql_" "_pEndSql
+}
+
+Method CountGroupMembers(pWhereList As %List = "", ByRef pArgs, pArgCount As %Integer, Output pTotalCount As %Integer) As %Status [ Private ]
+{
+    Set pTotalCount = 0
+    Try {
+        Set sql = "SELECT COUNT(*) AS TotalCount FROM Terminology_Loinc.GroupMember gm "
+        Set query = ..BuildQuery(sql, pWhereList, "")
+        Set tSC = ..ExecuteQuery(query, .pArgs, pArgCount, .rset)
+        $$$ThrowOnError(tSC)
+
+        If rset.%Next() {
+            Set pTotalCount = +rset.%Get("TotalCount")
+        }
+
+        Return $$$OK
+    } Catch ex {
+        Return $$$ERROR($$$GeneralError, ex.DisplayString())
+    }
+}
+
+Method PopulateBestDisplayForMember(pItem As Terminology.Loinc.DTO.GroupMemberItem, pReleaseId As %String = "", pLang As %String = "") As %Status [ Private ]
+{
+    Try {
+        Set whereList = ""
+        Set argCount = 0
+        Set sql = "SELECT TOP 1 DisplayType, RankOrder, Display "_
+                  "FROM Terminology_Loinc.Display "
+        Set endSQL = "ORDER BY CASE %SQLUPPER(DisplayType) "_
+                     "WHEN 'LONGCOMMONNAME' THEN 1 "_
+                     "WHEN 'SHORTNAME' THEN 2 "_
+                     "WHEN 'DISPLAYNAME' THEN 3 "_
+                     "WHEN 'CONSUMERNAME' THEN 4 "_
+                     "WHEN 'LINGUISTICVARIANT' THEN 5 "_
+                     "ELSE 99 END, RankOrder, Display"
+
+        If (pReleaseId '= "") {
+            Set whereList = whereList_$ListBuild("ReleaseId = ?")
+            Do ..AddArgument(.args, .argCount, pReleaseId)
+        }
+
+        Set whereList = whereList_$ListBuild("LoincNum = ?")
+        Do ..AddArgument(.args, .argCount, pItem.LoincNum)
+
+        If (pLang '= "") {
+            Set whereList = whereList_$ListBuild("Lang = ?")
+            Do ..AddArgument(.args, .argCount, pLang)
+        }
+
+        Set query = ..BuildQuery(sql, whereList, endSQL)
+        Set tSC = ..ExecuteQuery(query, .args, argCount, .rset)
+        $$$ThrowOnError(tSC)
+
+        If rset.%Next() {
+            Set pItem.DisplayType = rset.%Get("DisplayType")
+            Set pItem.RankOrder = rset.%Get("RankOrder")
+            Set pItem.Display = rset.%Get("Display")
+        }
+
+        Return $$$OK
+    } Catch ex {
+        Return $$$ERROR($$$GeneralError, ex.DisplayString())
+    }
 }
 
 Method ExecuteQuery(pQuery As %String, ByRef pArgs, pArgCount As %Integer, Output pResultSet As %SQL.StatementResult) As %Status [ Private ]

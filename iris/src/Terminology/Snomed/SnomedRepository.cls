@@ -425,35 +425,58 @@ Method GetRefsetMembers(pRefsetId As %String = "", pReleaseId As %String = "", p
             Set sql = sql_" AND "_$ListToString(joinList, " AND ")
         }
 
-        Set query = ..BuildQuery(sql, whereList, endSQL)
+        Set totalCount = 0
+        Set tSC = ..CountRefsetMembers(whereList, joinList, .args, argCount, .totalCount)
+        $$$ThrowOnError(tSC)
+
+        Set limit = $Select(pLimit>0:pLimit,1:100)
+        Set offset = $Select(pOffset>0:pOffset,1:0)
+        Do ..AddArgument(.args, .argCount, limit)
+        Do ..AddArgument(.args, .argCount, offset)
+
+        Set query = ..BuildQuery(sql, whereList, endSQL_" LIMIT ? OFFSET ?")
         Set tSC = ..ExecuteQuery(query, .args, argCount, .rset)
         $$$ThrowOnError(tSC)
 
-        Set skipped = 0
-        Set added = 0
-        Set limit = $Select(pLimit>0:pLimit,1:100)
-        Set offset = $Select(pOffset>0:pOffset,1:0)
-
         While rset.%Next() {
-            If skipped < offset {
-                Set skipped = skipped + 1
-                Continue
-            }
-
-            If added >= limit {
-                Continue
-            }
-
             Set item = ##class(Terminology.Snomed.DTO.RefsetMemberSummary).%New()
             Set item.RefsetId = rset.%Get("RefsetId")
             Set item.MemberId = rset.%Get("MemberId")
             Set item.ConceptId = rset.%Get("ConceptId")
             Set item.PreferredTerm = rset.%Get("Term")
             Do pResult.Items.Insert(item)
-            Set added = added + 1
         }
 
         Set pResult.Count = $Select($IsObject(pResult.Items):pResult.Items.Count(),1:0)
+        Set pResult.TotalCount = totalCount
+        Return $$$OK
+    } Catch ex {
+        Return $$$ERROR($$$GeneralError, ex.DisplayString())
+    }
+}
+
+Method CountRefsetMembers(pWhereList As %List = "", pJoinList As %List = "", ByRef pArgs, pArgCount As %Integer, Output pTotalCount As %Integer) As %Status [ Private ]
+{
+    Set pTotalCount = 0
+
+    Try {
+        Set sql = "SELECT COUNT(*) AS TotalCount "_
+                  "FROM Terminology_Snomed.RefsetMember rm "_
+                  "LEFT JOIN Terminology_Snomed.PreferredTerm pt "_
+                  "ON pt.ConceptId = rm.ReferencedId AND pt.ReleaseId = rm.ReleaseId "
+
+        If (pJoinList '= "") {
+            Set sql = sql_" AND "_$ListToString(pJoinList, " AND ")
+        }
+
+        Set query = ..BuildQuery(sql, pWhereList, "")
+        Set tSC = ..ExecuteQuery(query, .pArgs, pArgCount, .rset)
+        $$$ThrowOnError(tSC)
+
+        If rset.%Next() {
+            Set pTotalCount = +rset.%Get("TotalCount")
+        }
+
         Return $$$OK
     } Catch ex {
         Return $$$ERROR($$$GeneralError, ex.DisplayString())

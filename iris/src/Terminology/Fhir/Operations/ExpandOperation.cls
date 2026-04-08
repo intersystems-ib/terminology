@@ -258,7 +258,12 @@ ClassMethod BuildExpandResponse(pValueSetInfo As Terminology.Core.DTO.ValueSetIn
             }
             Do contains.%Push(containsItem)
         }
-        Do expansion.%Set("total", contains.%Size())
+        Set totalCount = +$PROPERTY(pMembers, "TotalCount")
+        If totalCount>0 {
+            Do expansion.%Set("total", totalCount)
+        } Else {
+            Do expansion.%Set("total", contains.%Size())
+        }
     } Else {
         Do expansion.%Set("total", 0)
     }

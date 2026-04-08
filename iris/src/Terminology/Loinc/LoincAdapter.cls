@@ -182,7 +182,7 @@ Method ValidateCode(pReleaseId As %String = "", pCode As %String = "", Output pR
 Method ExpandValueSetMembers(pValueSetId As %String = "", pReleaseId As %String = "", pLang As %String = "", pLimit As %Integer = 100, pOffset As %Integer = 0, Output pResult As Terminology.Loinc.DTO.GroupMemberResult) As %Status
 {
     Set groupId = ..NormalizeValueSetId(pValueSetId)
-    Return ..GetGroupMembers(groupId, pReleaseId, pLang, pLimit, pOffset, .pResult)
+    Return ..GetRepository().GetExpandedGroupMembers(groupId, pReleaseId, pLang, pLimit, pOffset, .pResult)
 }
 
 /// LOINC ValueSet ids are prefixed so they do not collide with SNOMED refset ids in FHIR search/read.
