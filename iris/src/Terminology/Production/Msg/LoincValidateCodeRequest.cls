@@ -1,4 +1,4 @@
-Class Terminology.Production.Msg.LoincValidateCodeRequest Extends Ens.Request
+Class Terminology.Production.Msg.LoincValidateCodeRequest Extends Terminology.Production.Msg.BaseRequest
 {
 
 Property ReleaseId As %String;

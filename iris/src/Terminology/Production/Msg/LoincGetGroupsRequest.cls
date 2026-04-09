@@ -1,4 +1,4 @@
-Class Terminology.Production.Msg.LoincGetGroupsRequest Extends Ens.Request
+Class Terminology.Production.Msg.LoincGetGroupsRequest Extends Terminology.Production.Msg.BaseRequest
 {
 
 Property ReleaseId As %String;

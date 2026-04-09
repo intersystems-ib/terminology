@@ -211,6 +211,53 @@ do ##class(%UnitTest.Manager).RunTest(, "/nodelete")
 
 The `/nodelete` flag is useful during development because it keeps the loaded test classes available after the run.
 
+## Use Request Tracing
+
+The repository includes a simple terminology trace global for debugging native and FHIR request flow:
+
+- `^TSTrace`
+
+Enable tracing in an IRIS terminal:
+
+```objectscript
+zn "TERMINOLOGY"
+set ^TSTrace("enabled")=1
+```
+
+Run a native or FHIR request, then inspect the trace:
+
+```objectscript
+zw ^TSTrace
+```
+
+Each request is stored under:
+
+- `^TSTrace("req",reqId,...)`
+
+Ordered trace entries are stored under:
+
+- `^TSTrace("req",reqId,"entry",seq,...)`
+
+Typical entries include:
+
+- request start and end
+- FHIR or native request context
+- service calls
+- SQL execution with arguments and elapsed time
+- errors
+
+To clear the trace during local debugging:
+
+```objectscript
+kill ^TSTrace
+```
+
+Then re-enable it when needed:
+
+```objectscript
+set ^TSTrace("enabled")=1
+```
+
 ## What You Should Understand After This Guide
 
 After following this guide, you should understand:

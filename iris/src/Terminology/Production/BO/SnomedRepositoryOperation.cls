@@ -45,6 +45,11 @@ Method OnMessage(pRequest As Ens.Request, Output pResponse As Ens.Response) As %
     Return $$$ERROR($$$NotImplemented, "Unsupported message type for SnomedRepositoryOperation")
 }
 
+Method RestoreTraceContext(pRequest As Terminology.Production.Msg.BaseRequest) As %Status [ Private ]
+{
+    Return ##class(Terminology.Core.Trace).RestoreRequestContext(pRequest)
+}
+
 /// Neutral operations go through TermService so future FHIR code can reuse the same contract.
 /// The BO keeps request/response handling and leaves business behavior to lower layers.
 Method HandleSearch(pRequest As Terminology.Production.Msg.SnomedSearchRequest, Output pResponse As Terminology.Production.Msg.SnomedSearchResponse) As %Status
@@ -52,6 +57,8 @@ Method HandleSearch(pRequest As Terminology.Production.Msg.SnomedSearchRequest, 
     Set pResponse = ##class(Terminology.Production.Msg.SnomedSearchResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetTermService().SearchConcepts(
             "snomed",
             pRequest.ReleaseId,
@@ -78,6 +85,8 @@ Method HandleGetConcept(pRequest As Terminology.Production.Msg.SnomedGetConceptR
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetConceptResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetTermService().LookupCode(
             "snomed",
             pRequest.ConceptId,
@@ -102,6 +111,8 @@ Method HandleGetChildren(pRequest As Terminology.Production.Msg.SnomedGetChildre
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetChildrenResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetSnomedAdapter().GetChildren(
             pRequest.ConceptId,
             pRequest.ReleaseId,
@@ -126,6 +137,8 @@ Method HandleGetDescendants(pRequest As Terminology.Production.Msg.SnomedGetDesc
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetDescendantsResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetSnomedAdapter().GetDescendants(
             pRequest.ConceptId,
             pRequest.ReleaseId,
@@ -152,6 +165,8 @@ Method HandleGetAncestors(pRequest As Terminology.Production.Msg.SnomedGetAncest
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetAncestorsResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetSnomedAdapter().GetAncestors(
             pRequest.ConceptId,
             pRequest.ReleaseId,
@@ -180,6 +195,8 @@ Method HandleGetDescriptions(pRequest As Terminology.Production.Msg.SnomedGetDes
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetDescriptionsResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetSnomedAdapter().GetDescriptions(
             pRequest.ConceptId,
             pRequest.ReleaseId,
@@ -206,6 +223,8 @@ Method HandleGetSubsumes(pRequest As Terminology.Production.Msg.SnomedGetSubsume
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetSubsumesResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetTermService().Subsumes(
             "snomed",
             pRequest.ReleaseId,
@@ -230,6 +249,8 @@ Method HandleGetRefsets(pRequest As Terminology.Production.Msg.SnomedGetRefsetsR
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetRefsetsResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetSnomedAdapter().GetRefsets(
             pRequest.ReleaseId,
             pRequest.Limit,
@@ -252,6 +273,8 @@ Method HandleGetRefsetMembers(pRequest As Terminology.Production.Msg.SnomedGetRe
     Set pResponse = ##class(Terminology.Production.Msg.SnomedGetRefsetMembersResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetSnomedAdapter().GetRefsetMembers(
             pRequest.RefsetId,
             pRequest.ReleaseId,
@@ -277,6 +300,8 @@ Method HandleValidateCode(pRequest As Terminology.Production.Msg.SnomedValidateC
     Set pResponse = ##class(Terminology.Production.Msg.SnomedValidateCodeResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetTermService().ValidateCode(
             "snomed",
             pRequest.ReleaseId,

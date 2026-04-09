@@ -6,6 +6,7 @@ Class Terminology.Core.TermService Extends %RegisteredObject
 /// Common lookup operation used by higher layers that should not know terminology-specific tables.
 Method LookupCode(pSystem As %String = "snomed", pCode As %String = "", pVersion As %String = "", pLang As %String = "", pDialect As %String = "", Output pResult) As %Status
 {
+    Do ##class(Terminology.Core.Trace).Log("service", "LookupCode", "system="_pSystem_" code="_pCode_" version="_pVersion_" lang="_pLang_" dialect="_pDialect)
     Return ..ResolveAdapter(pSystem).LookupCode(pCode, pVersion, pLang, pDialect, .pResult)
 }
 
@@ -13,6 +14,7 @@ Method LookupCode(pSystem As %String = "snomed", pCode As %String = "", pVersion
 /// Output is intentionally untyped because each adapter returns its own DTO shape.
 Method ValidateCode(pSystem As %String = "snomed", pVersion As %String = "", pCode As %String = "", Output pResult) As %Status
 {
+    Do ##class(Terminology.Core.Trace).Log("service", "ValidateCode", "system="_pSystem_" code="_pCode_" version="_pVersion)
     Return ..ResolveAdapter(pSystem).ValidateCode(pVersion, pCode, .pResult)
 }
 
@@ -20,18 +22,21 @@ Method ValidateCode(pSystem As %String = "snomed", pVersion As %String = "", pCo
 /// Output is intentionally untyped because each adapter may reuse or define its own result DTO.
 Method Subsumes(pSystem As %String = "snomed", pVersion As %String = "", pView As %String = "", pCodeA As %String = "", pCodeB As %String = "", Output pResult) As %Status
 {
+    Do ##class(Terminology.Core.Trace).Log("service", "Subsumes", "system="_pSystem_" version="_pVersion_" view="_pView_" codeA="_pCodeA_" codeB="_pCodeB)
     Return ..ResolveAdapter(pSystem).Subsumes(pVersion, pView, pCodeA, pCodeB, .pResult)
 }
 
 /// Common text search operation.
 Method SearchConcepts(pSystem As %String = "snomed", pVersion As %String = "", pLang As %String = "", pDialect As %String = "", pQuery As %String = "", pLimit As %Integer = 20, pOffset As %Integer = 0, Output pResult As Terminology.Snomed.DTO.SearchResult) As %Status
 {
+    Do ##class(Terminology.Core.Trace).Log("service", "SearchConcepts", "system="_pSystem_" version="_pVersion_" lang="_pLang_" dialect="_pDialect_" limit="_pLimit_" offset="_pOffset_" query="_pQuery)
     Return ..ResolveAdapter(pSystem).SearchConcepts(pVersion, pLang, pDialect, pQuery, pLimit, pOffset, .pResult)
 }
 
 /// Returns minimal code system metadata for read-only FHIR resource exposure.
 Method GetCodeSystemInfo(pId As %String = "", Output pResult As Terminology.Core.DTO.CodeSystemInfo) As %Status
 {
+    Do ##class(Terminology.Core.Trace).Log("service", "GetCodeSystemInfo", "id="_pId)
     Set pResult = ##class(Terminology.Core.DTO.CodeSystemInfo).%New()
     Set systemUri = ..ResolveCodeSystemUri(pId)
     If systemUri = "" {
@@ -57,12 +62,14 @@ Method GetCodeSystemInfo(pId As %String = "", Output pResult As Terminology.Core
 /// Returns minimal value set metadata for read-only FHIR resource exposure.
 Method GetValueSetInfo(pSystem As %String = "snomed", pId As %String = "", Output pResult As Terminology.Core.DTO.ValueSetInfo) As %Status
 {
+    Do ##class(Terminology.Core.Trace).Log("service", "GetValueSetInfo", "system="_pSystem_" id="_pId)
     Return ..ResolveAdapter(pSystem).GetValueSetInfo(pId, "", .pResult)
 }
 
 /// Returns minimal code system metadata rows for FHIR search-type support.
 Method SearchCodeSystems(pUrl As %String = "", pId As %String = "", pName As %String = "", pVersion As %String = "", Output pResult As Terminology.Core.DTO.CodeSystemListResult) As %Status
 {
+    Do ##class(Terminology.Core.Trace).Log("service", "SearchCodeSystems", "url="_pUrl_" id="_pId_" name="_pName_" version="_pVersion)
     Set pResult = ##class(Terminology.Core.DTO.CodeSystemListResult).%New()
     Set normalizedUrl = ..NormalizeCodeSystemUrl(pUrl)
     Set normalizedName = $ZCONVERT($ZSTRIP(pName, "<>W"), "L")
@@ -121,12 +128,14 @@ Method SearchCodeSystems(pUrl As %String = "", pId As %String = "", pName As %St
 /// Returns minimal value set metadata rows for FHIR search-type support.
 Method SearchValueSets(pSystem As %String = "snomed", pUrl As %String = "", pId As %String = "", pName As %String = "", pVersion As %String = "", Output pResult As Terminology.Core.DTO.ValueSetListResult) As %Status
 {
+    Do ##class(Terminology.Core.Trace).Log("service", "SearchValueSets", "system="_pSystem_" url="_pUrl_" id="_pId_" name="_pName_" version="_pVersion)
     Return ..ResolveAdapter(pSystem).SearchValueSets(pUrl, pId, pName, pVersion, .pResult)
 }
 
 /// Returns minimal value set metadata and members for the supported terminology-specific FHIR expand paths.
 Method ExpandValueSet(pSystem As %String = "snomed", pValueSetId As %String = "", pVersion As %String = "", pLang As %String = "", pDialect As %String = "", pCount As %Integer = 100, pOffset As %Integer = 0, Output pInfo As Terminology.Core.DTO.ValueSetInfo, Output pMembers) As %Status
 {
+    Do ##class(Terminology.Core.Trace).Log("service", "ExpandValueSet", "system="_pSystem_" valueSetId="_pValueSetId_" version="_pVersion_" lang="_pLang_" dialect="_pDialect_" count="_pCount_" offset="_pOffset)
     Set pInfo = ##class(Terminology.Core.DTO.ValueSetInfo).%New()
 
     Set tSC = ..ResolveAdapter(pSystem).GetValueSetInfo(pValueSetId, pVersion, .pInfo)

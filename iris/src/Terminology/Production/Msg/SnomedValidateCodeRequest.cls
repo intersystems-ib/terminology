@@ -1,4 +1,4 @@
-Class Terminology.Production.Msg.SnomedValidateCodeRequest Extends Ens.Request
+Class Terminology.Production.Msg.SnomedValidateCodeRequest Extends Terminology.Production.Msg.BaseRequest
 {
 
 Property ReleaseId As %String;

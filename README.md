@@ -121,8 +121,8 @@ For the full setup and verification flow, see [docs/getting-started.md](docs/get
 ## Documentation Map
 
 - [ARCHITECTURE.md](ARCHITECTURE.md): architecture, layer rationale and target direction
-- [docs/getting-started.md](docs/getting-started.md): build, start, load and verify the project
-- [docs/how-it-works.md](docs/how-it-works.md): narrative walkthrough for developers and partners new to the repo
+- [docs/getting-started.md](docs/getting-started.md): build, start, load, verify the project and use `^TSTrace` for request debugging
+- [docs/how-it-works.md](docs/how-it-works.md): narrative walkthrough for developers and partners new to the repo, including terminology request tracing
 - [FHIR_SCOPE.md](FHIR_SCOPE.md): current FHIR terminology scope and rollout approach
 - [CONVENTIONS.md](CONVENTIONS.md): coding, layering and documentation rules
 - [docs/http/snomed-native.http](docs/http/snomed-native.http): SNOMED native API examples

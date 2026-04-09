@@ -1,4 +1,4 @@
-Class Terminology.Production.Msg.LoincGetDescendantsRequest Extends Ens.Request
+Class Terminology.Production.Msg.LoincGetDescendantsRequest Extends Terminology.Production.Msg.BaseRequest
 {
 
 Property Code As %String;

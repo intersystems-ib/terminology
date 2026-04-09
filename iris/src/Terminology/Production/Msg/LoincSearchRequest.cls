@@ -1,4 +1,4 @@
-Class Terminology.Production.Msg.LoincSearchRequest Extends Ens.Request
+Class Terminology.Production.Msg.LoincSearchRequest Extends Terminology.Production.Msg.BaseRequest
 {
 
 Property Query As %String;

@@ -19,11 +19,13 @@ ClassMethod AddSupportedOperations(pMap As %DynamicObject)
 /// dispatch mechanism.
 ClassMethod ProcessOperation(pService As HS.FHIRServer.API.Service, pRequest As HS.FHIRServer.API.Data.Request, pResponse As HS.FHIRServer.API.Data.Response)
 {
+    Do ##class(Terminology.Core.Trace).Log("fhir", "ProcessOperation", "type="_pRequest.Type_" operation="_pRequest.OperationName_" scope="_pRequest.OperationScope_" id="_pRequest.Id)
+
     // Normalize hyphenated FHIR operation names to the IRIS dispatch method naming pattern.
     // (e.g. validate-code will call FHIR<Scope>OpValidatecode)
     Set pRequest.OperationName = $tr(pRequest.OperationName, "-", "")
 
-    return ##super(pService, pRequest, pResponse)
+    Return ##super(pService, pRequest, pResponse)
 }
 
 }

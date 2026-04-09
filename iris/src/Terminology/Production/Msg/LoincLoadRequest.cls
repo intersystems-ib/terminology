@@ -1,4 +1,4 @@
-Class Terminology.Production.Msg.LoincLoadRequest Extends Ens.Request
+Class Terminology.Production.Msg.LoincLoadRequest Extends Terminology.Production.Msg.BaseRequest
 {
 
 Property FileName As %String(MAXLEN = 200);

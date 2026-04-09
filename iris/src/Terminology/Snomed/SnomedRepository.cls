@@ -716,6 +716,7 @@ Method BuildQuery(pSql As %String, pWhereList As %List = "", pEndSQL As %String 
 Method ExecuteQuery(pSql As %String, ByRef pArgs, pArgCount As %Integer, Output pRset) As %Status [ Private ]
 {
     Try {
+        Set traceStart = $ZHOROLOG
         Set stmt = ##class(%SQL.Statement).%New()
         $$$ThrowOnError(stmt.%Prepare(pSql))
 
@@ -725,8 +726,12 @@ Method ExecuteQuery(pSql As %String, ByRef pArgs, pArgCount As %Integer, Output 
             Set pRset = stmt.%Execute(pArgs...)
         }
 
+        Do ##class(Terminology.Core.Trace).LogSQL("Terminology.Snomed.SnomedRepository.ExecuteQuery", pSql, .pArgs, pArgCount, ##class(Terminology.Core.Trace).ElapsedMilliseconds(traceStart))
+
         Return $$$OK
     } Catch ex {
+        Do ##class(Terminology.Core.Trace).LogError("sql", "Terminology.Snomed.SnomedRepository.ExecuteQuery", ex.DisplayString())
+        Do ##class(Terminology.Core.Trace).LogSQL("Terminology.Snomed.SnomedRepository.ExecuteQuery", pSql, .pArgs, pArgCount, ##class(Terminology.Core.Trace).ElapsedMilliseconds($Get(traceStart)), "ERROR")
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
 }
