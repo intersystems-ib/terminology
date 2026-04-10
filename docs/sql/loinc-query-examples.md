@@ -334,7 +334,7 @@ SELECT TOP 50
 FROM Terminology_Loinc.Display d
 WHERE d.ReleaseId = '2.82'
   AND d.Lang = 'es'
-  --AND d.DisplayNorm %STARTSWITH %SQLUPPER('hemo')
+  AND d.DisplayNorm %STARTSWITH %SQLUPPER('hemo')
 ORDER BY d.RankOrder, d.Display;
 ```
 

@@ -24,7 +24,7 @@ Method Subsumes(pSystem As %String = "snomed", pVersion As %String = "", pView A
 }
 
 /// Common text search operation.
-Method SearchConcepts(pSystem As %String = "snomed", pVersion As %String = "", pLang As %String = "", pDialect As %String = "", pQuery As %String = "", pLimit As %Integer = 20, pOffset As %Integer = 0, Output pResult As Terminology.Snomed.DTO.SearchResult) As %Status
+Method SearchConcepts(pSystem As %String = "snomed", pVersion As %String = "", pLang As %String = "", pDialect As %String = "", pQuery As %String = "", pLimit As %Integer = 20, pOffset As %Integer = 0, Output pResult) As %Status
 {
     Return ..ResolveAdapter(pSystem).SearchConcepts(pVersion, pLang, pDialect, pQuery, pLimit, pOffset, .pResult)
 }
@@ -150,11 +150,21 @@ Method ExpandValueSet(pSystem As %String = "snomed", pValueSetId As %String = ""
 /// The return type is generic because the adapters do not share one concrete class.
 Method ResolveAdapter(pSystem As %String = "snomed") As %RegisteredObject [ Private ]
 {
-    If (pSystem = "") || ($ZCONVERT(pSystem, "L") = "snomed") || (pSystem = "http://snomed.info/sct") {
+    Set normalized = ..NormalizeCodeSystemUrl(pSystem)
+
+    If (normalized = "") || ($ZCONVERT(normalized, "L") = "snomed") || ($ZCONVERT(normalized, "L") = "http://snomed.info/sct") {
         Quit ##class(Terminology.Snomed.SnomedAdapter).%New()
     }
-    If ($ZCONVERT(pSystem, "L") = "loinc") || (pSystem = "http://loinc.org") {
+
+    If ($ZCONVERT(normalized, "L") = "loinc") || ($ZCONVERT(normalized, "L") = "http://loinc.org") {
         Quit ##class(Terminology.Loinc.LoincAdapter).%New()
+    }
+
+    If ($ZCONVERT(normalized, "L") = "cie")
+        || ($ZCONVERT(normalized, "L") = "icd10")
+        || ($ZCONVERT(normalized, "L") = "icd-10")
+        || ($ZCONVERT(normalized, "L") = "http://hl7.org/fhir/sid/icd-10") {
+        Quit ##class(Terminology.CIE.CIEAdapter).%New()
     }
 
     Set tSC = $$$ERROR($$$NotImplemented, "Unsupported terminology system: "_pSystem)
@@ -170,6 +180,7 @@ Method BuildCodeSystemId(pSystemUri As %String = "") As %String [ Private ]
     If pSystemUri = "http://loinc.org" {
         Return "loinc"
     }
+    
 
     Return $ZCONVERT(pSystemUri, "L")
 }
@@ -184,7 +195,12 @@ Method ResolveCodeSystemUri(pId As %String = "") As %String [ Private ]
     If ($ZCONVERT(normalized, "L") = "loinc") || ($ZCONVERT(normalized, "L") = "http://loinc.org") {
         Return "http://loinc.org"
     }
-
+    If ($ZCONVERT(normalized, "L") = "cie")
+        || ($ZCONVERT(normalized, "L") = "icd10")
+        || ($ZCONVERT(normalized, "L") = "icd-10")
+        || ($ZCONVERT(normalized, "L") = "http://hl7.org/fhir/sid/icd-10") {
+        Return "http://hl7.org/fhir/sid/icd-10"
+    }
     Return ""
 }
 
@@ -218,6 +234,13 @@ Method NormalizeCodeSystemUrl(pValue As %String = "") As %String [ Private ]
 
     If $ZCONVERT(normalized, "L") = "loinc" {
         Return "loinc"
+    }
+
+    If ($ZCONVERT(normalized, "L") = "cie")
+        || ($ZCONVERT(normalized, "L") = "icd10")
+        || ($ZCONVERT(normalized, "L") = "icd-10")
+        || ($ZCONVERT(normalized, "L") = "http://hl7.org/fhir/sid/icd-10") {
+        Return "http://hl7.org/fhir/sid/icd-10"
     }
 
     Return normalized

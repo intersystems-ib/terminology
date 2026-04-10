@@ -51,6 +51,21 @@ XData ProductionDefinition
   </Item>
   <Item Name="LoincGatewayService" Category="" ClassName="Terminology.Production.BS.LoincGatewayService" PoolSize="0" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
   </Item>
+  <Item Name="CIEGatewayService" Category="" ClassName="Terminology.Production.BS.CIEGatewayService" PoolSize="0" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+  </Item>
+  <Item Name="CIEFileService" Category="" ClassName="Terminology.Production.BS.CIEFileService" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+    <Setting Target="Adapter" Name="FilePath">/iris-shared/in/cie</Setting>
+    <Setting Target="Adapter" Name="FileSpec">*.txt</Setting>
+    <Setting Target="Host" Name="TargetConfigName">CIEFileProcessing</Setting>
+    <Setting Target="Adapter" Name="Charset">utf-8</Setting>
+    <Setting Target="Host" Name="ReleaseId">CIE-10-ES 2026</Setting>
+  </Item>
+  <Item Name="CIEFileProcessing" Category="" ClassName="Terminology.Production.BP.CIELoad" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+    <Setting Target="Host" Name="ReleaseId">CIE-10-ES 2026</Setting>
+    <Setting Target="Host" Name="Version">10</Setting>
+  </Item>
+  <Item Name="CIERepositoryOperation" Category="" ClassName="Terminology.Production.BO.CIERepositoryOperation" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+  </Item>
 </Production>
 }
 

@@ -15,6 +15,10 @@ Parameter SnomedGatewayConfigName = "SnomedGatewayService";
 
 Parameter LoincGatewayConfigName = "LoincGatewayService";
 
+Parameter CIETargetConfigName = "CIERepositoryOperation";
+
+Parameter CIEGatewayConfigName = "CIEGatewayService";
+
 XData UrlMap
 {
 <Routes>
@@ -37,6 +41,15 @@ XData UrlMap
     <Route Url="/loinc/groups" Method="GET" Call="LoincGetGroups"/>
     <Route Url="/loinc/groups/:groupId/members" Method="GET" Call="LoincGetGroupMembers"/>
     <Route Url="/loinc/validate-code" Method="GET" Call="LoincValidateCode"/>
+    <Route Url="/cie/search" Method="GET" Call="CIESearch"/>
+    <Route Url="/cie/codes/:code" Method="GET" Call="CIEGetCode"/>
+    <Route Url="/cie/codes/:code/children" Method="GET" Call="CIEGetChildren"/>
+    <Route Url="/cie/codes/:code/descendants" Method="GET" Call="CIEGetDescendants"/>
+    <Route Url="/cie/codes/:code/ancestors" Method="GET" Call="CIEGetAncestors"/>
+
+<Route Url="/cie/families" Method="GET" Call="CIEGetFamilies"/>
+
+<Route Url="/cie/validate-code" Method="GET" Call="CIEValidateCode"/>
 </Routes>
 }
 
@@ -586,6 +599,246 @@ ClassMethod LoincValidateCode() As %Status
 
         Set rsp = ""
         Set tSC = ..SendGatewayRequest(req, .rsp, ..#LoincGatewayConfigName, ..#LoincTargetConfigName)
+        If $$$ISERR(tSC) {
+            Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)
+            Return $$$OK
+        }
+
+        Do ..WriteDynamicResponse(rsp.Payload)
+        Return $$$OK
+    } Catch ex {
+        Do ..WriteError(ex.DisplayString(), 500)
+        Return $$$OK
+    }
+}
+
+ClassMethod CIESearch() As %Status
+{
+    Set tSC = $$$OK
+
+    Try {
+        Set req = ##class(Terminology.Production.Msg.CIESearchRequest).%New()
+
+        Set req.Query = $Get(%request.Data("q",1))
+        Set req.ReleaseId = $Get(%request.Data("releaseId",1))
+        Set req.Version = +$Get(%request.Data("version",1))
+        Set req.CodeType = $Get(%request.Data("codeType",1))
+
+        If req.CodeType="" Set req.CodeType="DIAGNOSIS"
+
+        Set req.Limit = +$Get(%request.Data("limit",1))
+        If req.Limit=0 Set req.Limit=20
+
+        Set req.Offset = +$Get(%request.Data("offset",1))
+
+        Set rsp = ""
+        Set tSC = ..SendGatewayRequest(req, .rsp, ..#CIEGatewayConfigName, ..#CIETargetConfigName)
+
+        If $$$ISERR(tSC) {
+            Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)
+            Return $$$OK
+        }
+
+        Do ..WriteDynamicResponse(rsp.Payload)
+        Return $$$OK
+    } Catch ex {
+        Do ..WriteError(ex.DisplayString(), 500)
+        Return $$$OK
+    }
+}
+
+ClassMethod CIEGetCode(code As %String) As %Status
+{
+    Set tSC = $$$OK
+
+    Try {
+        Set req = ##class(Terminology.Production.Msg.CIEGetCodeRequest).%New()
+
+        Set req.Code = code
+        Set req.ReleaseId = $Get(%request.Data("releaseId",1))
+        Set req.Version = +$Get(%request.Data("version",1))
+        Set req.CodeType = $Get(%request.Data("codeType",1))
+
+        If req.CodeType="" Set req.CodeType="DIAGNOSIS"
+
+        Set rsp = ""
+        Set tSC = ..SendGatewayRequest(req, .rsp, ..#CIEGatewayConfigName, ..#CIETargetConfigName)
+
+        If $$$ISERR(tSC) {
+            Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)
+            Return $$$OK
+        }
+
+        Do ..WriteDynamicResponse(rsp.Payload)
+        Return $$$OK
+    } Catch ex {
+        Do ..WriteError(ex.DisplayString(), 500)
+        Return $$$OK
+    }
+}
+
+ClassMethod CIEGetChildren(code As %String) As %Status
+{
+    Set tSC = $$$OK
+
+    Try {
+        Set req = ##class(Terminology.Production.Msg.CIEGetChildrenRequest).%New()
+
+        Set req.Code = code
+        Set req.ReleaseId = $Get(%request.Data("releaseId",1))
+        Set req.Version = +$Get(%request.Data("version",1))
+        Set req.CodeType = $Get(%request.Data("codeType",1))
+
+        If req.CodeType="" Set req.CodeType="DIAGNOSIS"
+
+        Set req.Limit = +$Get(%request.Data("limit",1))
+        If req.Limit=0 Set req.Limit=100
+
+        Set req.Offset = +$Get(%request.Data("offset",1))
+
+        Set rsp = ""
+        Set tSC = ..SendGatewayRequest(req, .rsp, ..#CIEGatewayConfigName, ..#CIETargetConfigName)
+
+        If $$$ISERR(tSC) {
+            Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)
+            Return $$$OK
+        }
+
+        Do ..WriteDynamicResponse(rsp.Payload)
+        Return $$$OK
+    } Catch ex {
+        Do ..WriteError(ex.DisplayString(), 500)
+        Return $$$OK
+    }
+}
+
+ClassMethod CIEGetDescendants(code As %String) As %Status
+{
+    Set tSC = $$$OK
+
+    Try {
+        Set req = ##class(Terminology.Production.Msg.CIEGetDescendantsRequest).%New()
+
+        Set req.Code = code
+        Set req.ReleaseId = $Get(%request.Data("releaseId",1))
+        Set req.Version = +$Get(%request.Data("version",1))
+        Set req.CodeType = $Get(%request.Data("codeType",1))
+
+        If req.CodeType="" Set req.CodeType="DIAGNOSIS"
+
+        Set req.IncludeSelf = +$Get(%request.Data("includeSelf",1))
+        Set req.MaxDepth = +$Get(%request.Data("maxDepth",1))
+
+        Set req.Limit = +$Get(%request.Data("limit",1))
+        If req.Limit=0 Set req.Limit=100
+
+        Set req.Offset = +$Get(%request.Data("offset",1))
+
+        Set rsp = ""
+        Set tSC = ..SendGatewayRequest(req, .rsp, ..#CIEGatewayConfigName, ..#CIETargetConfigName)
+
+        If $$$ISERR(tSC) {
+            Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)
+            Return $$$OK
+        }
+
+        Do ..WriteDynamicResponse(rsp.Payload)
+        Return $$$OK
+    } Catch ex {
+        Do ..WriteError(ex.DisplayString(), 500)
+        Return $$$OK
+    }
+}
+
+ClassMethod CIEGetAncestors(code As %String) As %Status
+{
+    Set tSC = $$$OK
+
+    Try {
+        Set req = ##class(Terminology.Production.Msg.CIEGetAncestorsRequest).%New()
+
+        Set req.Code = code
+        Set req.ReleaseId = $Get(%request.Data("releaseId",1))
+        Set req.Version = +$Get(%request.Data("version",1))
+        Set req.CodeType = $Get(%request.Data("codeType",1))
+
+        If req.CodeType="" Set req.CodeType="DIAGNOSIS"
+
+        Set req.IncludeSelf = +$Get(%request.Data("includeSelf",1))
+        Set req.MaxDepth = +$Get(%request.Data("maxDepth",1))
+
+        Set req.Limit = +$Get(%request.Data("limit",1))
+        If req.Limit=0 Set req.Limit=100
+
+        Set req.Offset = +$Get(%request.Data("offset",1))
+
+        Set rsp = ""
+        Set tSC = ..SendGatewayRequest(req, .rsp, ..#CIEGatewayConfigName, ..#CIETargetConfigName)
+
+        If $$$ISERR(tSC) {
+            Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)
+            Return $$$OK
+        }
+
+        Do ..WriteDynamicResponse(rsp.Payload)
+        Return $$$OK
+    } Catch ex {
+        Do ..WriteError(ex.DisplayString(), 500)
+        Return $$$OK
+    }
+}
+
+ClassMethod CIEGetFamilies() As %Status
+{
+    Set tSC = $$$OK
+
+    Try {
+        Set req = ##class(Terminology.Production.Msg.CIEGetFamiliesRequest).%New()
+
+        Set req.ReleaseId = $Get(%request.Data("releaseId",1))
+        Set req.Version = +$Get(%request.Data("version",1))
+        Set req.CodeType = $Get(%request.Data("codeType",1))
+
+        If req.CodeType="" Set req.CodeType="DIAGNOSIS"
+
+        Set req.Limit = +$Get(%request.Data("limit",1))
+        If req.Limit=0 Set req.Limit=100
+
+        Set req.Offset = +$Get(%request.Data("offset",1))
+
+        Set rsp = ""
+        Set tSC = ..SendGatewayRequest(req, .rsp, ..#CIEGatewayConfigName, ..#CIETargetConfigName)
+
+        If $$$ISERR(tSC) {
+            Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)
+            Return $$$OK
+        }
+
+        Do ..WriteDynamicResponse(rsp.Payload)
+        Return $$$OK
+    } Catch ex {
+        Do ..WriteError(ex.DisplayString(), 500)
+        Return $$$OK
+    }
+}
+
+ClassMethod CIEValidateCode() As %Status
+{
+    Set tSC = $$$OK
+
+    Try {
+        Set req = ##class(Terminology.Production.Msg.CIEValidateCodeRequest).%New()
+
+        Set req.ReleaseId = $Get(%request.Data("releaseId",1))
+        Set req.Version = +$Get(%request.Data("version",1))
+        Set req.CodeType = $Get(%request.Data("codeType",1))
+        Set req.Code = $Get(%request.Data("code",1))
+
+        If req.CodeType="" Set req.CodeType="DIAGNOSIS"
+
+        Set rsp = ""
+        Set tSC = ..SendGatewayRequest(req, .rsp, ..#CIEGatewayConfigName, ..#CIETargetConfigName)
+
         If $$$ISERR(tSC) {
             Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)
             Return $$$OK

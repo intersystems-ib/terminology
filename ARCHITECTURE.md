@@ -86,6 +86,8 @@ IRIS production / file intake
   |
   +--> LOINC load + build
   |
+  +--> CIE load + build
+  |
   v
 Terminology-specific source and runtime tables
 ```
@@ -216,6 +218,15 @@ Source/runtime tables:
 - `Terminology_Loinc.LoincGroup`
 - `Terminology_Loinc.GroupMember`
 
+### CIE Data model
+
+Source/runtime tables:
+
+- `Terminology_CIE.Chapter`
+- `Terminology_CIE.Code`
+- `Terminology_CIE.Family`
+- `Terminology_CIE.HierarchyEdge`
+
 ### Shared Metadata
 
 Shared metadata used by the integrated API/FHIR layers is stored separately in the core area, for example:
@@ -233,6 +244,7 @@ Current examples:
 
 - SNOMED packages under `iris/shared/in/snomed/`
 - LOINC packages under `iris/shared/in/loinc/`
+- CIE packages under `iris/shared/in/cie/`
 
 The IRIS production detects those files and starts the appropriate terminology load flow.
 
@@ -301,6 +313,7 @@ Current examples:
 
 - `Terminology.Snomed.SnomedAdapter`
 - `Terminology.Loinc.LoincAdapter`
+- `Terminology.CIE.CIEAdapter`
 
 ### Repository Layer
 
@@ -314,6 +327,7 @@ Current examples:
 
 - `Terminology.Snomed.SnomedRepository`
 - `Terminology.Loinc.LoincRepository`
+- `Terminology.CIE.CIERepository`
 
 ### Load / Build Layer
 
@@ -349,6 +363,7 @@ Core terminology contracts
   |
   +--> SNOMED adapter
   +--> LOINC adapter
+  +--> CIE adapter
   +--> future terminology adapters
 ```
 
