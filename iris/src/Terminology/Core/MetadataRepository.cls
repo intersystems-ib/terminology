@@ -12,11 +12,12 @@ Method GetCodeSystemInfo(pSystemUri As %String = "", Output pResult As Terminolo
             Return $$$OK
         }
 
-        Set stmt = ##class(%SQL.Statement).%New()
-        Set tSC = stmt.%Prepare("SELECT Name, DefaultLang, DefaultDialect, Notes FROM Terminology_Core.CodeSystem WHERE SystemUri = ?")
+        Set argCount = 0
+        Set sql = "SELECT Name, DefaultLang, DefaultDialect, Notes FROM Terminology_Core.CodeSystem WHERE SystemUri = ?"
+        Do ..AddArgument(.args, .argCount, pSystemUri)
+        Set tSC = ..ExecuteQuery(sql, .args, argCount, .rset)
         $$$ThrowOnError(tSC)
 
-        Set rset = stmt.%Execute(pSystemUri)
         If rset.%Next() {
             Set pResult.Url = pSystemUri
             Set pResult.Name = rset.%Get("Name")
@@ -31,11 +32,13 @@ Method GetCodeSystemInfo(pSystemUri As %String = "", Output pResult As Terminolo
         Set pResult.Content = "not-present"
         Set pResult.Status = "draft"
 
-        Set stmt = ##class(%SQL.Statement).%New()
-        Set tSC = stmt.%Prepare("SELECT TOP 1 ReleaseId, VersionUri FROM Terminology_Core.VersionRelease WHERE SystemUri = ? AND IsActive = 1 ORDER BY EffectiveDate DESC, ReleaseId DESC")
+        Kill args
+        Set argCount = 0
+        Set sql = "SELECT TOP 1 ReleaseId, VersionUri FROM Terminology_Core.VersionRelease WHERE SystemUri = ? AND IsActive = 1 ORDER BY EffectiveDate DESC, ReleaseId DESC"
+        Do ..AddArgument(.args, .argCount, pSystemUri)
+        Set tSC = ..ExecuteQuery(sql, .args, argCount, .rset)
         $$$ThrowOnError(tSC)
 
-        Set rset = stmt.%Execute(pSystemUri)
         If rset.%Next() {
             Set pResult.Version = $Select(rset.%Get("VersionUri")'="":rset.%Get("VersionUri"), 1:rset.%Get("ReleaseId"))
             Set pResult.Status = "active"
@@ -112,6 +115,7 @@ Method SearchCodeSystems(pUrl As %String = "", pName As %String = "", Output pRe
 Method AddArgument(ByRef pArgs, ByRef pArgCount, pValue As %String) [ Private ]
 {
     Set pArgCount = pArgCount + 1
+    Set pArgs = pArgCount
     Set pArgs(pArgCount) = pValue
 }
 
@@ -130,18 +134,24 @@ Method BuildQuery(pSelect As %String, pWhereList As %List = "", pEnd As %String 
 Method ExecuteQuery(pQuery As %String, ByRef pArgs, pArgCount As %Integer, Output pResultSet As %SQL.StatementResult) As %Status [ Private ]
 {
     Try {
+        Set traceStart = $ZHOROLOG
         Set stmt = ##class(%SQL.Statement).%New()
         Set tSC = stmt.%Prepare(pQuery)
         $$$ThrowOnError(tSC)
 
         If pArgCount>0 {
+            Set pArgs = pArgCount
             Set pResultSet = stmt.%Execute(pArgs...)
         } Else {
             Set pResultSet = stmt.%Execute()
         }
 
+        Do ##class(Terminology.Core.Trace).LogSQL("Terminology.Core.MetadataRepository.ExecuteQuery", pQuery, .pArgs, pArgCount, ##class(Terminology.Core.Trace).ElapsedMilliseconds(traceStart))
+
         return $$$OK
     } Catch ex {
+        Do ##class(Terminology.Core.Trace).LogError("sql", "Terminology.Core.MetadataRepository.ExecuteQuery", ex.DisplayString())
+        Do ##class(Terminology.Core.Trace).LogSQL("Terminology.Core.MetadataRepository.ExecuteQuery", pQuery, .pArgs, pArgCount, ##class(Terminology.Core.Trace).ElapsedMilliseconds($Get(traceStart)), "ERROR")
         return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
 }

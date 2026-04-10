@@ -4,28 +4,52 @@ Class Terminology.Fhir.Interactions Extends HS.FHIRServer.Storage.Json.Interacti
 
 Parameter OperationHandlerClass = "Terminology.Fhir.Operations.TerminologyOperations";
 
+Method OnBeforeRequest(pFHIRService As HS.FHIRServer.API.Service, pFHIRRequest As HS.FHIRServer.API.Data.Request, pTimeout As %Integer)
+{
+    Do ##super(pFHIRService, pFHIRRequest, pTimeout)
+    Do ##class(Terminology.Core.Trace).StartRequest(
+        "fhir",
+        "request",
+        "interaction="_pFHIRRequest.Interaction_" type="_pFHIRRequest.Type_" operation="_pFHIRRequest.OperationName_" scope="_pFHIRRequest.OperationScope_" id="_pFHIRRequest.Id_" method="_pFHIRRequest.RequestMethod_" path="_pFHIRRequest.RequestPath
+    )
+}
+
+Method OnAfterRequest(pFHIRService As HS.FHIRServer.API.Service, pFHIRRequest As HS.FHIRServer.API.Data.Request, pFHIRResponse As HS.FHIRServer.API.Data.Response)
+{
+    Do ##class(Terminology.Core.Trace).Log("fhir", "response", "status="_pFHIRResponse.Status)
+    Do ##class(Terminology.Core.Trace).EndRequest("fhir", "request-end", "status="_pFHIRResponse.Status)
+    Do ##super(pFHIRService, pFHIRRequest, .pFHIRResponse)
+}
+
 Method Read(pResourceType As %String, pResourceId As %String, pVersionId As %String = "") As %DynamicObject
 {
-    if pResourceType="CodeSystem" {
-        set tSC = ##class(Terminology.Core.TermService).%New().GetCodeSystemInfo(pResourceId, .info)
-        $$$ThrowOnError(tSC)
+    Try {
+        Do ##class(Terminology.Core.Trace).Log("fhir", "Read", "resourceType="_pResourceType_" id="_pResourceId_" versionId="_pVersionId)
+        if pResourceType="CodeSystem" {
+            set tSC = ##class(Terminology.Core.TermService).%New().GetCodeSystemInfo(pResourceId, .info)
+            $$$ThrowOnError(tSC)
 
-        set resource = ##class(Terminology.Fhir.ResourceMapper).BuildCodeSystem(info)
-        if $IsObject(resource) {
-            quit resource
+            set resource = ##class(Terminology.Fhir.ResourceMapper).BuildCodeSystem(info)
+            if $IsObject(resource) {
+                return resource
+            }
         }
-    }
-    elseif pResourceType="ValueSet" {
-        set tSC = ..GetValueSetInfoAnySystem(pResourceId, .info)
-        $$$ThrowOnError(tSC)
+        elseif pResourceType="ValueSet" {
+            set tSC = ..GetValueSetInfoAnySystem(pResourceId, .info)
+            $$$ThrowOnError(tSC)
 
-        set resource = ##class(Terminology.Fhir.ResourceMapper).BuildValueSet(info)
-        if $IsObject(resource) {
-            quit resource
+            set resource = ##class(Terminology.Fhir.ResourceMapper).BuildValueSet(info)
+            if $IsObject(resource) {
+                return resource
+            }
         }
-    }
 
-    quit ##super(pResourceType, pResourceId, pVersionId)
+        Set resource = ##super(pResourceType, pResourceId, pVersionId)
+        return resource
+    } Catch ex {
+        Do ##class(Terminology.Core.Trace).LogError("fhir", "Read", ex.DisplayString())
+        Throw ex
+    }
 }
 
 /// @API
@@ -45,14 +69,23 @@ Method Read(pResourceType As %String, pResourceId As %String, pVersionId As %Str
 /// @Throws The implementation must report errors via $$$ThrowStatus.
 Method Search(pResourceType As %String, pCompartment As %String, pCompartmentId As %String, pParameters As HS.FHIRServer.API.Data.QueryParameters = "", ByRef pSortKeys = "") As HS.FHIRServer.Util.SearchResult
 {
-    if pResourceType="CodeSystem" {
-        quit ..SearchMetadataResources("CodeSystem", pParameters)
-    }
-    elseif pResourceType="ValueSet" {
-        quit ..SearchMetadataResources("ValueSet", pParameters)
-    }
+    Try {
+        Do ##class(Terminology.Core.Trace).Log("fhir", "Search", "resourceType="_pResourceType_" compartment="_pCompartment_" compartmentId="_pCompartmentId)
+        if pResourceType="CodeSystem" {
+            Set result = ..SearchMetadataResources("CodeSystem", pParameters)
+            return result
+        }
+        elseif pResourceType="ValueSet" {
+            Set result = ..SearchMetadataResources("ValueSet", pParameters)
+            return result
+        }
 
-    quit ##super(pResourceType, pCompartment, pCompartmentId, pParameters, .pSortKeys)
+        Set result = ##super(pResourceType, pCompartment, pCompartmentId, pParameters, .pSortKeys)
+        return result
+    } Catch ex {
+        Do ##class(Terminology.Core.Trace).LogError("fhir", "Search", ex.DisplayString())
+        Throw ex
+    }
 }
 
 Method LoadMetadata() As %DynamicObject

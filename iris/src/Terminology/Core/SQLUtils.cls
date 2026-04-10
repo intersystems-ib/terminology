@@ -6,9 +6,11 @@ ClassMethod ExecuteNonQuery(pSql As %String, pParamsJson As %String = "[]") As %
     Set tSC = $$$OK
 
     Try {
+        Set traceStart = $ZHOROLOG
         Set stmt = ##class(%SQL.Statement).%New()
         Set tSC = stmt.%Prepare(pSql)
         If $$$ISERR(tSC) {
+            Do ##class(Terminology.Core.Trace).LogError("sql", "Terminology.Core.SqlUtils.ExecuteNonQuery prepare failed", $System.Status.GetOneErrorText(tSC))
             Return tSC
         }
 
@@ -27,8 +29,11 @@ ClassMethod ExecuteNonQuery(pSql As %String, pParamsJson As %String = "[]") As %
             Set rset = stmt.%Execute()
         }
 
+        Do ##class(Terminology.Core.Trace).Log("sql", "Terminology.Core.SqlUtils.ExecuteNonQuery", "elapsedMs="_##class(Terminology.Core.Trace).ElapsedMilliseconds(traceStart)_" paramsJson="_pParamsJson_" sql="_pSql)
+
         Return $$$OK
     } Catch ex {
+        Do ##class(Terminology.Core.Trace).LogError("sql", "Terminology.Core.SqlUtils.ExecuteNonQuery", "elapsedMs="_##class(Terminology.Core.Trace).ElapsedMilliseconds($Get(traceStart))_" paramsJson="_pParamsJson_" sql="_pSql_" error="_ex.DisplayString())
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
 }

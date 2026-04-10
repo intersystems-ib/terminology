@@ -1,4 +1,4 @@
-Class Terminology.Production.Msg.SnomedGetRefsetMembersRequest Extends Ens.Request
+Class Terminology.Production.Msg.SnomedGetRefsetMembersRequest Extends Terminology.Production.Msg.BaseRequest
 {
 
 Property ReleaseId As %String;

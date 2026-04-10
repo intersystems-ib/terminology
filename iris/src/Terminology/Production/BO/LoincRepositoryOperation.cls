@@ -41,12 +41,19 @@ Method OnMessage(pRequest As Ens.Request, Output pResponse As Ens.Response) As %
     Return $$$ERROR($$$NotImplemented, "Unsupported message type for LoincRepositoryOperation")
 }
 
+Method RestoreTraceContext(pRequest As Terminology.Production.Msg.BaseRequest) As %Status [ Private ]
+{
+    Return ##class(Terminology.Core.Trace).RestoreRequestContext(pRequest)
+}
+
 /// Neutral search goes through TermService so the BO stays aligned with the common terminology contract.
 Method HandleSearch(pRequest As Terminology.Production.Msg.LoincSearchRequest, Output pResponse As Terminology.Production.Msg.LoincSearchResponse) As %Status
 {
     Set pResponse = ##class(Terminology.Production.Msg.LoincSearchResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetTermService().SearchConcepts(
             "loinc",
             pRequest.ReleaseId,
@@ -72,6 +79,8 @@ Method HandleGetCode(pRequest As Terminology.Production.Msg.LoincGetCodeRequest,
     Set pResponse = ##class(Terminology.Production.Msg.LoincGetCodeResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetTermService().LookupCode(
             "loinc",
             pRequest.LoincNum,
@@ -95,6 +104,8 @@ Method HandleGetDisplays(pRequest As Terminology.Production.Msg.LoincGetDisplays
     Set pResponse = ##class(Terminology.Production.Msg.LoincGetDisplaysResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetLoincAdapter().GetDisplays(
             pRequest.LoincNum,
             pRequest.ReleaseId,
@@ -118,6 +129,8 @@ Method HandleGetParts(pRequest As Terminology.Production.Msg.LoincGetPartsReques
     Set pResponse = ##class(Terminology.Production.Msg.LoincGetPartsResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetLoincAdapter().GetParts(
             pRequest.LoincNum,
             pRequest.ReleaseId,
@@ -140,6 +153,8 @@ Method HandleGetAncestors(pRequest As Terminology.Production.Msg.LoincGetAncesto
     Set pResponse = ##class(Terminology.Production.Msg.LoincGetAncestorsResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetLoincAdapter().GetAncestors(
             pRequest.Code,
             pRequest.ReleaseId,
@@ -164,6 +179,8 @@ Method HandleGetDescendants(pRequest As Terminology.Production.Msg.LoincGetDesce
     Set pResponse = ##class(Terminology.Production.Msg.LoincGetDescendantsResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetLoincAdapter().GetDescendants(
             pRequest.Code,
             pRequest.ReleaseId,
@@ -188,6 +205,8 @@ Method HandleGetGroups(pRequest As Terminology.Production.Msg.LoincGetGroupsRequ
     Set pResponse = ##class(Terminology.Production.Msg.LoincGetGroupsResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetLoincAdapter().GetGroups(
             pRequest.ReleaseId,
             pRequest.Limit,
@@ -209,6 +228,8 @@ Method HandleGetGroupMembers(pRequest As Terminology.Production.Msg.LoincGetGrou
     Set pResponse = ##class(Terminology.Production.Msg.LoincGetGroupMembersResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetLoincAdapter().GetGroupMembers(
             pRequest.GroupId,
             pRequest.ReleaseId,
@@ -232,6 +253,8 @@ Method HandleValidateCode(pRequest As Terminology.Production.Msg.LoincValidateCo
     Set pResponse = ##class(Terminology.Production.Msg.LoincValidateCodeResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetTermService().ValidateCode(
             "loinc",
             pRequest.ReleaseId,

@@ -152,7 +152,56 @@ The FHIR path is centered on:
 
 This path matters because it shows how the same underlying terminology server can be exposed through a standard FHIR interface while still delegating real execution to the correct terminology implementation.
 
-## 6. Why The Architecture Uses TermService, Adapters And Repositories
+## 6. Request Tracing
+
+The repository includes a simple terminology-owned trace facility for debugging request flow across both native and FHIR APIs.
+
+It is centered on:
+
+- `Terminology.Core.Trace`
+- the global `^TSTrace`
+
+This trace is intentionally separate from:
+
+- FHIR server internal logging such as `^FSLOG`
+- interoperability production logging through `Ens.Util.Log`
+
+The goal of `^TSTrace` is to give one request-level picture of what happened from API entry to SQL execution.
+
+At a high level, the trace captures:
+
+- request start and end
+- native or FHIR request context
+- service-layer method calls
+- repository SQL execution
+- errors raised along the path
+
+Each traced request receives a numeric request id under `^TSTrace("req",reqId,...)`.
+Detailed entries are stored in order under:
+
+- `^TSTrace("req",reqId,"entry",seq,...)`
+
+This structure keeps the trace readable in a terminal `ZW ^TSTrace` view while still making it easy to follow request order.
+
+### Native Tracing Path
+
+For the native APIs, tracing starts at the REST/interop boundary and then follows the shared terminology stack:
+
+- `Terminology.Production.API`
+- `Terminology.Core.TermService`
+- terminology adapter and repository classes
+- SQL execution helpers
+
+### FHIR Tracing Path
+
+For the FHIR APIs, request lifecycle tracing is attached to the custom interactions class:
+
+- `Terminology.Fhir.Interactions.OnBeforeRequest`
+- `Terminology.Fhir.Interactions.OnAfterRequest`
+
+That means one FHIR trace is created per request, while lower-level FHIR methods add detail entries without starting nested traces.
+
+## 7. Why The Architecture Uses TermService, Adapters And Repositories
 
 ### TermService
 
@@ -186,7 +235,7 @@ This is where IRIS-specific query behavior belongs, including:
 - ordering and lookup rules
 - iFind-backed search behavior where used
 
-## 7. Why There Is Both A Native API And A FHIR API
+## 8. Why There Is Both A Native API And A FHIR API
 
 The native APIs are useful because:
 
@@ -200,7 +249,7 @@ The FHIR API is useful because:
 - it pushes the architecture toward a reusable common service layer
 - it is important for partner-facing conversations about interoperability
 
-## 8. How To Read The Codebase
+## 9. How To Read The Codebase
 
 ### Fastest Technical Path
 
@@ -225,7 +274,7 @@ The FHIR API is useful because:
 3. the `.http` files under `docs/http/`
 4. the SQL examples under `docs/sql/`
 
-## 9. How To Debug Problems
+## 10. How To Debug Problems
 
 When debugging, first decide which phase is failing:
 
@@ -237,7 +286,10 @@ When debugging, first decide which phase is failing:
 
 That separation matches the architecture and usually leads to the right part of the code quickly.
 
-## 10. Future Direction
+If you need the full path of one request, enable `^TSTrace("enabled")=1` and inspect `^TSTrace` after repeating the call.
+That is especially useful when you need to correlate FHIR or native requests with the SQL statements executed underneath.
+
+## 11. Future Direction
 
 The repository is intended to grow as a multi-terminology example on IRIS for Health.
 
