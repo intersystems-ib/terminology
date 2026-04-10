@@ -638,10 +638,9 @@ ClassMethod CIESearch() As %Status
             Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)
             Return $$$OK
         }
-
-        Do ..WriteDynamicResponse(rsp.Payload)
+    Do ..WriteDynamicResponse(rsp.Payload)
         Return $$$OK
-    } Catch ex {
+    }Catch ex {
         Do ..WriteError(ex.DisplayString(), 500)
         Return $$$OK
     }
@@ -854,12 +853,32 @@ ClassMethod CIEValidateCode() As %Status
 
 ClassMethod SendGatewayRequest(pRequest As Ens.Request, Output pResponse As Ens.Response, tGatewayName As %String, tTargetName As %String) As %Status
 {
-  set status = ##class(Ens.Director).CreateBusinessService(tGatewayName, .instance)
-  Quit instance.SendRequestSync(tTargetName, pRequest, .pResponse)
+  Do ##class(Terminology.Core.Trace).StartRequest("native", tTargetName, "gateway="_tGatewayName_" requestClass="_$Select($IsObject(pRequest):pRequest.%ClassName(1),1:""))
+  Set pRequest.TraceId = $Get(^||TSTraceRequestId)
+  Set pRequest.TraceStart = $Get(^||TSTraceRequestStart)
+
+  Set status = ##class(Ens.Director).CreateBusinessService(tGatewayName, .instance)
+  If $$$ISERR(status) {
+      Do ##class(Terminology.Core.Trace).LogError("native", "CreateBusinessService failed", $System.Status.GetOneErrorText(status))
+      Do ##class(Terminology.Core.Trace).EndRequest("native", "request-error", "stage=CreateBusinessService")
+      Return status
+  }
+
+  Do ##class(Terminology.Core.Trace).Log("native", "SendRequestSync", "target="_tTargetName_" requestClass="_$Select($IsObject(pRequest):pRequest.%ClassName(1),1:""))
+  Set status = instance.SendRequestSync(tTargetName, pRequest, .pResponse)
+  If $$$ISERR(status) {
+      Do ##class(Terminology.Core.Trace).LogError("native", "SendRequestSync failed", $System.Status.GetOneErrorText(status))
+      Do ##class(Terminology.Core.Trace).EndRequest("native", "request-error", "stage=SendRequestSync")
+      Return status
+  }
+
+  Return status
 }
 
 ClassMethod WriteDynamicResponse(pPayload As %JSON.Adaptor) As %Status
 {
+    Do ##class(Terminology.Core.Trace).Log("native", "WriteDynamicResponse", "payloadClass="_$Select($IsObject(pPayload):pPayload.%ClassName(1),1:""))
+    Do ##class(Terminology.Core.Trace).EndRequest("native")
     Set %response.ContentType = "application/json"
     do pPayload.%JSONExport()
     Return $$$OK
@@ -867,6 +886,8 @@ ClassMethod WriteDynamicResponse(pPayload As %JSON.Adaptor) As %Status
 
 ClassMethod WriteError(pMessage As %String, pHttpCode As %Integer = 500) As %Status
 {
+    Do ##class(Terminology.Core.Trace).LogError("native", "WriteError", "httpCode="_pHttpCode_" message="_pMessage)
+    Do ##class(Terminology.Core.Trace).EndRequest("native", "request-error", "httpCode="_pHttpCode)
     Set %response.Status = pHttpCode
     Set %response.ContentType = "application/json"
 

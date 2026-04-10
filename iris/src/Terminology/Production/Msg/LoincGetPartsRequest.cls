@@ -1,4 +1,4 @@
-Class Terminology.Production.Msg.LoincGetPartsRequest Extends Ens.Request
+Class Terminology.Production.Msg.LoincGetPartsRequest Extends Terminology.Production.Msg.BaseRequest
 {
 
 Property LoincNum As %String;

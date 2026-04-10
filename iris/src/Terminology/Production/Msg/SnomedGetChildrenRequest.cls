@@ -1,4 +1,4 @@
-Class Terminology.Production.Msg.SnomedGetChildrenRequest Extends Ens.Request
+Class Terminology.Production.Msg.SnomedGetChildrenRequest Extends Terminology.Production.Msg.BaseRequest
 {
 
 Property ConceptId As %String;

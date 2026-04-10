@@ -1,4 +1,4 @@
-Class Terminology.Production.Msg.LoincGetGroupMembersRequest Extends Ens.Request
+Class Terminology.Production.Msg.LoincGetGroupMembersRequest Extends Terminology.Production.Msg.BaseRequest
 {
 
 Property GroupId As %String;

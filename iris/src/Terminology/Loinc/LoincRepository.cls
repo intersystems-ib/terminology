@@ -622,6 +622,7 @@ Method PopulateBestDisplayForMember(pItem As Terminology.Loinc.DTO.GroupMemberIt
 Method ExecuteQuery(pQuery As %String, ByRef pArgs, pArgCount As %Integer, Output pResultSet As %SQL.StatementResult) As %Status [ Private ]
 {
     Try {
+        Set traceStart = $ZHOROLOG
         Set statement = ##class(%SQL.Statement).%New()
         $$$ThrowOnError(statement.%Prepare(pQuery))
 
@@ -632,8 +633,12 @@ Method ExecuteQuery(pQuery As %String, ByRef pArgs, pArgCount As %Integer, Outpu
             Set pResultSet = statement.%Execute()
         }
 
+        Do ##class(Terminology.Core.Trace).LogSQL("Terminology.Loinc.LoincRepository.ExecuteQuery", pQuery, .pArgs, pArgCount, ##class(Terminology.Core.Trace).ElapsedMilliseconds(traceStart))
+
         Return $$$OK
     } Catch ex {
+        Do ##class(Terminology.Core.Trace).LogError("sql", "Terminology.Loinc.LoincRepository.ExecuteQuery", ex.DisplayString())
+        Do ##class(Terminology.Core.Trace).LogSQL("Terminology.Loinc.LoincRepository.ExecuteQuery", pQuery, .pArgs, pArgCount, ##class(Terminology.Core.Trace).ElapsedMilliseconds($Get(traceStart)), "ERROR")
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
 }

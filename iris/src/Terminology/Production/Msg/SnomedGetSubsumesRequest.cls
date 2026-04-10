@@ -1,4 +1,4 @@
-Class Terminology.Production.Msg.SnomedGetSubsumesRequest Extends Ens.Request
+Class Terminology.Production.Msg.SnomedGetSubsumesRequest Extends Terminology.Production.Msg.BaseRequest
 {
 
 Property ReleaseId As %String;
