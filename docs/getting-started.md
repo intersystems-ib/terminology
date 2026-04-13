@@ -7,13 +7,14 @@ Today the practical paths are:
 
 - SNOMED CT
 - LOINC
-- the shared FHIR terminology surface over both
+- ICD
+- the shared FHIR terminology surface over all three
 
 ## What You Will Do
 
 1. build the container image
 2. start the stack
-3. load one or both terminologies
+3. load one or more terminologies
 4. verify native and FHIR behavior
 5. use the repo docs to understand the architecture better
 
@@ -29,8 +30,8 @@ Today the practical paths are:
 ### FHIR-Focused Path
 
 1. build and start the stack
-2. load one or both terminologies
-3. use `docs/http/snomed-fhir-r4.http` and `docs/http/loinc-fhir-r4.http`
+2. load one or more terminologies
+3. use `docs/http/snomed-fhir-r4.http`, `docs/http/loinc-fhir-r4.http` and `docs/http/icd-fhir-r4.http`
 4. then read [FHIR_SCOPE.md](../FHIR_SCOPE.md)
 
 ### Architecture Path
@@ -48,6 +49,7 @@ Before starting, make sure you have:
 - access to an InterSystems IRIS for Health environment compatible with this repository
 - a SNOMED CT release ZIP if you want to run the SNOMED path
 - a LOINC release ZIP if you want to run the LOINC path
+- ICD source files if you want to run the ICD path
 
 ## Build The Image
 
@@ -100,6 +102,16 @@ iris/shared/in/loinc/
 
 The production process watches that location and will ingest the file.
 
+### Load ICD
+
+Place the ICD source files in:
+
+```text
+iris/shared/in/icd/
+```
+
+The production process watches that location and will ingest and build the ICD runtime structures.
+
 ## Optional SQL Tuning
 
 The repository includes:
@@ -130,6 +142,7 @@ Use:
 
 - [docs/http/snomed-native.http](http/snomed-native.http)
 - [docs/http/loinc-native.http](http/loinc-native.http)
+- [docs/http/icd-native.http](http/icd-native.http)
 
 Recommended initial checks:
 
@@ -144,6 +157,7 @@ Use:
 
 - [docs/http/snomed-fhir-r4.http](http/snomed-fhir-r4.http)
 - [docs/http/loinc-fhir-r4.http](http/loinc-fhir-r4.http)
+- [docs/http/icd-fhir-r4.http](http/icd-fhir-r4.http)
 
 Recommended initial checks:
 
@@ -168,14 +182,16 @@ The repository includes initial `%UnitTest` suites for:
 
 - `Terminology.Tests.Snomed.*`
 - `Terminology.Tests.Loinc.*`
+- `Terminology.Tests.ICD.*`
 - `Terminology.Tests.Fhir.R4.*`
 
 Notes:
 
 - these tests seed their own synthetic terminology fixture data under dedicated `ReleaseId` values
 - the LOINC tests seed their own synthetic release rows under `ReleaseId = UT-LOINC-20260401`
-- the FHIR suite is split into metadata-only tests plus SNOMED-backed and LOINC-backed API classes
-- they can be run with or without a full SNOMED or LOINC catalog already loaded
+- the ICD tests seed their own synthetic release rows under `ReleaseId = UT-ICD-20260401`
+- the FHIR suite is split into metadata-only tests plus SNOMED-backed, LOINC-backed and ICD-backed API classes
+- they can be run with or without a full SNOMED, LOINC or ICD catalog already loaded
 - they do require the local IRIS stack to be running and the native terminology web application to be available
 
 Open an IRIS terminal in the container:
@@ -202,6 +218,7 @@ Use:
 
 - `snomed` to run all tests under `iris/tests/snomed`
 - `loinc` to run all tests under `iris/tests/loinc`
+- `icd` to run all tests under `iris/tests/icd`
 - `fhir` to run all tests under `iris/tests/fhir`
 - no suite argument to run all tests
 

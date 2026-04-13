@@ -22,7 +22,7 @@ ClassMethod FHIRInstanceOpExpand(pService As HS.FHIRServer.API.Service, pRequest
 }
 
 /// Keeps the FHIR layer thin by validating request semantics and delegating expansion retrieval.
-/// ValueSet expansion is currently implemented for SNOMED refsets and LOINC groups.
+/// ValueSet expansion is currently implemented for SNOMED refsets, LOINC groups and ICD families.
 ClassMethod ProcessValueSetExpand(pService As HS.FHIRServer.API.Service, pRequest As HS.FHIRServer.API.Data.Request, pResponse As HS.FHIRServer.API.Data.Response, pResourceType As %String, pResourceId As %String = "")
 {
     If pResourceType'="ValueSet" {
@@ -137,43 +137,7 @@ ClassMethod ResolveExpandContext(pResourceId As %String, pUrl As %String, pReque
 /// Resolves the target ValueSet id and system from either the resource id or canonical url.
 ClassMethod ResolveValueSetTarget(pResourceId As %String, pUrl As %String, Output pTarget As %DynamicObject) As %Status [ Private ]
 {
-    Set pTarget = ##class(%DynamicObject).%New()
-    Do pTarget.%Set("valueSetId", "")
-    Do pTarget.%Set("system", "")
-    Do pTarget.%Set("systemUri", "")
-
-    If pResourceId '= "" {
-        If $Extract($ZCONVERT(pResourceId, "L"), 1, 12) = "loinc-group-" {
-            Do pTarget.%Set("valueSetId", pResourceId)
-            Do pTarget.%Set("system", "loinc")
-            Do pTarget.%Set("systemUri", "http://loinc.org")
-            Return $$$OK
-        }
-
-        Do pTarget.%Set("valueSetId", pResourceId)
-        Do pTarget.%Set("system", "snomed")
-        Do pTarget.%Set("systemUri", "http://snomed.info/sct")
-        Return $$$OK
-    }
-
-    If pUrl = "" {
-        Return $$$OK
-    }
-
-    If pUrl["?fhir_vs=refset/" {
-        Do pTarget.%Set("valueSetId", $Piece(pUrl, "?fhir_vs=refset/", 2))
-        Do pTarget.%Set("system", "snomed")
-        Do pTarget.%Set("systemUri", "http://snomed.info/sct")
-        Return $$$OK
-    }
-
-    If $Extract($ZCONVERT(pUrl, "L"), 1, 20) = "http://loinc.org/vs/" {
-        Do pTarget.%Set("valueSetId", "loinc-group-"_$Piece(pUrl, "http://loinc.org/vs/", 2))
-        Do pTarget.%Set("system", "loinc")
-        Do pTarget.%Set("systemUri", "http://loinc.org")
-    }
-
-    Return $$$OK
+    Return ##class(Terminology.Core.TerminologyRegistry).ResolveFhirValueSetTarget(pResourceId, pUrl, .pTarget)
 }
 
 /// Supports the current SNOMED refset canonical url form used by this server.
@@ -258,7 +222,19 @@ ClassMethod BuildExpandResponse(pValueSetInfo As Terminology.Core.DTO.ValueSetIn
             }
             Do contains.%Push(containsItem)
         }
-        Set totalCount = +$PROPERTY(pMembers, "TotalCount")
+        Set totalCount = 0
+        Try {
+            Set totalCount = +$PROPERTY(pMembers, "TotalCount")
+        } Catch ex {
+            Set totalCount = 0
+        }
+        If totalCount=0 {
+            Try {
+                Set totalCount = +$PROPERTY(pMembers, "Count")
+            } Catch ex {
+                Set totalCount = 0
+            }
+        }
         If totalCount>0 {
             Do expansion.%Set("total", totalCount)
         } Else {
@@ -280,8 +256,12 @@ ClassMethod GetExpandMemberCode(pSystemUri As %String, pMember) As %String [ Pri
         Return ""
     }
 
-    If pSystemUri = "http://loinc.org" {
+    If ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemId(pSystemUri) = "loinc" {
         Return $PROPERTY(pMember, "LoincNum")
+    }
+
+    If ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemId(pSystemUri) = "icd-10" {
+        Return $PROPERTY(pMember, "Code")
     }
 
     Return $PROPERTY(pMember, "ConceptId")
@@ -294,8 +274,12 @@ ClassMethod GetExpandMemberDisplay(pSystemUri As %String, pMember) As %String [ 
         Return ""
     }
 
-    If pSystemUri = "http://loinc.org" {
+    If ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemId(pSystemUri) = "loinc" {
         Return $PROPERTY(pMember, "Display")
+    }
+
+    If ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemId(pSystemUri) = "icd-10" {
+        Return $PROPERTY(pMember, "Description")
     }
 
     Return $PROPERTY(pMember, "PreferredTerm")
@@ -308,7 +292,7 @@ ClassMethod GetExpandMemberPriority(pSystemUri As %String, pMember) As %Integer 
         Return 999
     }
 
-    If pSystemUri '= "http://loinc.org" {
+    If ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemId(pSystemUri) '= "loinc" {
         Return 1
     }
 
@@ -339,7 +323,7 @@ ClassMethod GetExpandMemberRankOrder(pSystemUri As %String, pMember) As %Integer
         Return 999999
     }
 
-    If pSystemUri '= "http://loinc.org" {
+    If ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemId(pSystemUri) '= "loinc" {
         Return 0
     }
 

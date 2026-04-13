@@ -19,7 +19,7 @@ ClassMethod BuildCodeSystem(pInfo As Terminology.Core.DTO.CodeSystemInfo) As %Dy
     }
 
     If pInfo.Name '= "" {
-        Set resource.name = ..ToFhirName(pInfo.Name)
+        Set resource.name = ..NormalizeFhirName(pInfo.Name)
     }
 
     If pInfo.Title '= "" {
@@ -53,7 +53,7 @@ ClassMethod BuildValueSet(pInfo As Terminology.Core.DTO.ValueSetInfo) As %Dynami
     }
 
     If pInfo.Name '= "" {
-        Set resource.name = ..ToFhirName(pInfo.Name)
+        Set resource.name = ..NormalizeFhirName(pInfo.Name)
     }
 
     If pInfo.Title '= "" {
@@ -70,14 +70,14 @@ ClassMethod BuildValueSet(pInfo As Terminology.Core.DTO.ValueSetInfo) As %Dynami
 }
 
 /// Keeps generated FHIR `name` values within the simple token format expected by the spec.
-ClassMethod ToFhirName(pValue As %String = "") As %String [ Private ]
+ClassMethod NormalizeFhirName(pValue As %String = "") As %String
 {
     Set normalized = $ZSTRIP(pValue, "<>W")
     Set normalized = $TRANSLATE(normalized, " -./,:;()[]{}")
     If normalized = "" {
-        Quit "TerminologyResource"
+        Return "TerminologyResource"
     }
-    Quit normalized
+    Return normalized
 }
 
 }

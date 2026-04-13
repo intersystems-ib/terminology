@@ -214,6 +214,136 @@ Method GetFamilies(pReleaseId As %String = "", pVersion As %Integer = "", pCodeT
     }
 }
 
+Method GetFamilyByCode(pFamilyCode As %String = "", pReleaseId As %String = "", pVersion As %Integer = "", pCodeType As %String = "", Output pResult As Terminology.ICD.DTO.FamilyItem) As %Status
+{
+    Set pResult = ##class(Terminology.ICD.DTO.FamilyItem).%New()
+
+    If pFamilyCode = "" {
+        Return $$$OK
+    }
+
+    Try {
+        Set sql = "SELECT TOP 1 FamilyCode, Description, ChapterCode, RangeStart, RangeEnd "_
+                  "FROM Terminology_ICD.Family WHERE FamilyCode = ?"
+        Set argCount = 0
+        Do ..AddArgument(.args, .argCount, pFamilyCode)
+
+        If pReleaseId'="" {
+            Set sql = sql_" AND ReleaseId = ?"
+            Do ..AddArgument(.args, .argCount, pReleaseId)
+        }
+        If pVersion'="" {
+            Set sql = sql_" AND Version = ?"
+            Do ..AddArgument(.args, .argCount, pVersion)
+        }
+        If pCodeType'="" {
+            Set sql = sql_" AND CodeType = ?"
+            Do ..AddArgument(.args, .argCount, pCodeType)
+        }
+
+        Set sql = sql_" ORDER BY FamilyCode"
+        Set tSC = ..ExecuteQuery(sql, .args, argCount, .rset)
+        $$$ThrowOnError(tSC)
+
+        If '$IsObject(rset) || 'rset.%Next() {
+            Return $$$OK
+        }
+
+        Set pResult.FamilyCode = rset.%Get("FamilyCode")
+        Set pResult.Description = rset.%Get("Description")
+        Set pResult.ChapterCode = rset.%Get("ChapterCode")
+        Set pResult.RangeStart = rset.%Get("RangeStart")
+        Set pResult.RangeEnd = rset.%Get("RangeEnd")
+        Return $$$OK
+    } Catch ex {
+        Return $$$ERROR($$$GeneralError, ex.DisplayString())
+    }
+}
+
+Method GetFamilyMembers(pFamilyCode As %String = "", pReleaseId As %String = "", pVersion As %Integer = "", pCodeType As %String = "", pLimit As %Integer = 100, pOffset As %Integer = 0, Output pResult As Terminology.ICD.DTO.SearchResult) As %Status
+{
+    Set pResult = ##class(Terminology.ICD.DTO.SearchResult).%New()
+    Set pResult.Items = ##class(%ListOfObjects).%New()
+
+    If pFamilyCode = "" {
+        Return $$$OK
+    }
+
+    Try {
+        Set argCount = 0
+        Set whereList = ""
+        Set sql = "SELECT Code, Description, Version, CodeType, FamilyCode, ChapterCode, ParentCode, HierarchyLevel "_
+                  "FROM Terminology_ICD.Code "
+        Set endSQL = "ORDER BY Code"
+
+        Set whereList = whereList_$ListBuild("FamilyCode = ?")
+        Do ..AddArgument(.args, .argCount, pFamilyCode)
+
+        If pReleaseId'="" {
+            Set whereList = whereList_$ListBuild("ReleaseId = ?")
+            Do ..AddArgument(.args, .argCount, pReleaseId)
+        }
+        If pVersion'="" {
+            Set whereList = whereList_$ListBuild("Version = ?")
+            Do ..AddArgument(.args, .argCount, pVersion)
+        }
+        If pCodeType'="" {
+            Set whereList = whereList_$ListBuild("CodeType = ?")
+            Do ..AddArgument(.args, .argCount, pCodeType)
+        }
+
+        Set tSC = ..CountFamilyMembers(whereList, .args, argCount, .totalCount)
+        $$$ThrowOnError(tSC)
+
+        Set limit = $Select(pLimit>0:pLimit,1:100)
+        Set offset = $Select(pOffset>0:pOffset,1:0)
+        Do ..AddArgument(.args, .argCount, limit)
+        Do ..AddArgument(.args, .argCount, offset)
+
+        Set query = ..BuildQuery(sql, whereList, endSQL_" LIMIT ? OFFSET ?")
+        Set tSC = ..ExecuteQuery(query, .args, argCount, .rset)
+        $$$ThrowOnError(tSC)
+
+        While rset.%Next() {
+            Set item = ##class(Terminology.ICD.DTO.SearchItem).%New()
+            Set item.Code = rset.%Get("Code")
+            Set item.Description = rset.%Get("Description")
+            Set item.Version = rset.%Get("Version")
+            Set item.CodeType = rset.%Get("CodeType")
+            Set item.FamilyCode = rset.%Get("FamilyCode")
+            Set item.ChapterCode = rset.%Get("ChapterCode")
+            Set item.ParentCode = rset.%Get("ParentCode")
+            Set item.HierarchyLevel = rset.%Get("HierarchyLevel")
+            Do pResult.Items.Insert(item)
+        }
+
+        Set pResult.Count = totalCount
+        Return $$$OK
+    } Catch ex {
+        Return $$$ERROR($$$GeneralError, ex.DisplayString())
+    }
+}
+
+Method CountFamilyMembers(pWhereList As %List = "", ByRef pArgs, pArgCount As %Integer, Output pTotalCount As %Integer) As %Status [ Private ]
+{
+    Set pTotalCount = 0
+
+    Try {
+        Set sql = "SELECT COUNT(*) AS TotalCount FROM Terminology_ICD.Code "
+        Set query = ..BuildQuery(sql, pWhereList, "")
+        Set tSC = ..ExecuteQuery(query, .pArgs, pArgCount, .rset)
+        $$$ThrowOnError(tSC)
+
+        If rset.%Next() {
+            Set pTotalCount = +rset.%Get("TotalCount")
+        }
+
+        Return $$$OK
+    } Catch ex {
+        Return $$$ERROR($$$GeneralError, ex.DisplayString())
+    }
+}
+
 Method ValidateCode(pReleaseId As %String = "", pVersion As %Integer = "", pCodeType As %String = "", pCode As %String = "", Output pResult As Terminology.ICD.DTO.ValidateCodeResult) As %Status
 {
     Set pResult = ##class(Terminology.ICD.DTO.ValidateCodeResult).%New()
@@ -233,6 +363,57 @@ Method ValidateCode(pReleaseId As %String = "", pVersion As %Integer = "", pCode
         } Else {
             Set pResult.Exists = 0
             Set pResult.Active = 0
+        }
+
+        Return $$$OK
+    } Catch ex {
+        Return $$$ERROR($$$GeneralError, ex.DisplayString())
+    }
+}
+
+Method Subsumes(pReleaseId As %String = "", pVersion As %Integer = "", pCodeType As %String = "", pCodeA As %String = "", pCodeB As %String = "", Output pResult As Terminology.Snomed.DTO.SubsumesResult) As %Status
+{
+    Set pResult = ##class(Terminology.Snomed.DTO.SubsumesResult).%New()
+
+    If (pCodeA = "") || (pCodeB = "") {
+        Set pResult.Relationship = "not-subsumed"
+        Return $$$OK
+    }
+
+    If pCodeA = pCodeB {
+        Set pResult.Relationship = "equivalent"
+        Return $$$OK
+    }
+
+    Try {
+        Set sql = "SELECT TOP 1 ParentCode "_
+                  "FROM Terminology_ICD.HierarchyEdge "_
+                  "WHERE HierarchyType = ? AND ParentCode = ? AND ChildCode = ?"
+        Set argCount = 0
+        Do ..AddArgument(.args, .argCount, "CODE")
+        Do ..AddArgument(.args, .argCount, pCodeA)
+        Do ..AddArgument(.args, .argCount, pCodeB)
+
+        If pReleaseId'="" {
+            Set sql = sql_" AND ReleaseId = ?"
+            Do ..AddArgument(.args, .argCount, pReleaseId)
+        }
+        If pVersion'="" {
+            Set sql = sql_" AND Version = ?"
+            Do ..AddArgument(.args, .argCount, pVersion)
+        }
+        If pCodeType'="" {
+            Set sql = sql_" AND CodeType = ?"
+            Do ..AddArgument(.args, .argCount, pCodeType)
+        }
+
+        Set tSC = ..ExecuteQuery(sql, .args, argCount, .rset)
+        $$$ThrowOnError(tSC)
+
+        If $IsObject(rset) && rset.%Next() {
+            Set pResult.Relationship = "subsumes"
+        } Else {
+            Set pResult.Relationship = "not-subsumed"
         }
 
         Return $$$OK

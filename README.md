@@ -8,7 +8,7 @@ It is intended both as:
 - a partner-facing example that supports architecture conversations, capability discussions and opportunity discovery
 
 The repository is intentionally multi-terminology.
-Today it supports SNOMED CT and LOINC.
+Today it supports SNOMED CT, LOINC and ICD across native and FHIR APIs.
 The target direction is to keep adding terminologies through the same architectural model instead of building isolated one-off implementations.
 
 ## Why This Repo Exists
@@ -29,8 +29,9 @@ The goal is to show how to structure a terminology server on IRIS so that each t
 
 - SNOMED CT ingestion from RF2 releases
 - LOINC ingestion from release packages
+- ICD ingestion and native + FHIR API support
 - terminology-specific source and runtime-optimized storage
-- native REST APIs under `/terminology/snomed` and `/terminology/loinc`
+- native REST APIs under `/terminology/snomed`, `/terminology/loinc` and `/terminology/icd`
 - a shared FHIR R4 terminology surface under `/terminology/fhir/r4`
 - a common terminology service layer with adapters and repositories underneath
 - search and query optimization patterns on IRIS, including iFind-backed search where appropriate
@@ -41,6 +42,7 @@ Today the repository provides:
 
 - SNOMED CT native and FHIR terminology support
 - LOINC native and FHIR terminology support
+- ICD native and FHIR terminology support
 - terminology-specific ingestion and repository layers
 - a common `Terminology.Core.TermService` used to present a more integrated view
 - a production-based ingestion model on IRIS for Health
@@ -63,12 +65,16 @@ Terminology-specific load + build flows
     |
     +--> LOINC source + derived tables
     |
+    +--> ICD source + derived tables
+    |
     v
 Terminology.Core.TermService
     |
     +--> SNOMED adapter -> SNOMED repository
     |
     +--> LOINC adapter  -> LOINC repository
+    |
+    +--> ICD adapter    -> ICD repository
     |
     v
 Native APIs + FHIR R4 terminology APIs
@@ -109,6 +115,7 @@ docker compose up -d
 
 - SNOMED CT packages under `iris/shared/in/snomed/base/` and optionally `iris/shared/in/snomed/extension/`
 - LOINC packages under `iris/shared/in/loinc/`
+- ICD source files under `iris/shared/in/icd/`
 
 4. Let the production ingest and build the runtime structures.
 
@@ -127,8 +134,10 @@ For the full setup and verification flow, see [docs/getting-started.md](docs/get
 - [CONVENTIONS.md](CONVENTIONS.md): coding, layering and documentation rules
 - [docs/http/snomed-native.http](docs/http/snomed-native.http): SNOMED native API examples
 - [docs/http/loinc-native.http](docs/http/loinc-native.http): LOINC native API examples
+- [docs/http/icd-native.http](docs/http/icd-native.http): ICD native API examples
 - [docs/http/snomed-fhir-r4.http](docs/http/snomed-fhir-r4.http): SNOMED FHIR examples
 - [docs/http/loinc-fhir-r4.http](docs/http/loinc-fhir-r4.http): LOINC FHIR examples
+- [docs/http/icd-fhir-r4.http](docs/http/icd-fhir-r4.http): ICD FHIR examples
 - [docs/sql/snomed-query-examples.md](docs/sql/snomed-query-examples.md): direct SQL examples for SNOMED
 - [docs/sql/loinc-query-examples.md](docs/sql/loinc-query-examples.md): direct SQL examples for LOINC
 
@@ -138,7 +147,7 @@ For the full setup and verification flow, see [docs/getting-started.md](docs/get
 
 1. Read this file.
 2. Follow [docs/getting-started.md](docs/getting-started.md).
-3. Run one native example and one FHIR example for both SNOMED and LOINC.
+3. Run one native example and one FHIR example for SNOMED, LOINC or ICD.
 
 ### Architecture Path
 

@@ -4,6 +4,7 @@ Class Terminology.Fhir.Interactions Extends HS.FHIRServer.Storage.Json.Interacti
 
 Parameter OperationHandlerClass = "Terminology.Fhir.Operations.TerminologyOperations";
 
+/// Starts one trace scope per incoming FHIR request before delegating to the base server behavior.
 Method OnBeforeRequest(pFHIRService As HS.FHIRServer.API.Service, pFHIRRequest As HS.FHIRServer.API.Data.Request, pTimeout As %Integer)
 {
     Do ##super(pFHIRService, pFHIRRequest, pTimeout)
@@ -14,6 +15,7 @@ Method OnBeforeRequest(pFHIRService As HS.FHIRServer.API.Service, pFHIRRequest A
     )
 }
 
+/// Completes the request trace with the HTTP status after the FHIR handler finishes.
 Method OnAfterRequest(pFHIRService As HS.FHIRServer.API.Service, pFHIRRequest As HS.FHIRServer.API.Data.Request, pFHIRResponse As HS.FHIRServer.API.Data.Response)
 {
     Do ##class(Terminology.Core.Trace).Log("fhir", "response", "status="_pFHIRResponse.Status)
@@ -21,6 +23,7 @@ Method OnAfterRequest(pFHIRService As HS.FHIRServer.API.Service, pFHIRRequest As
     Do ##super(pFHIRService, pFHIRRequest, .pFHIRResponse)
 }
 
+/// Handles direct read support for metadata-backed CodeSystem and ValueSet resources before falling back to the base server.
 Method Read(pResourceType As %String, pResourceId As %String, pVersionId As %String = "") As %DynamicObject
 {
     Try {
@@ -67,6 +70,7 @@ Method Read(pResourceType As %String, pResourceId As %String, pVersionId As %Str
 ///   pSortKeys(n, "SearchParam") = An HS.FHIRServer.SearchParam object whose value is used to sort.
 /// @Return A HS.FHIRServer.Util.SearchResult object containing one row for each selected resource.  
 /// @Throws The implementation must report errors via $$$ThrowStatus.
+/// Intercepts CodeSystem and ValueSet search so the FHIR layer can expose terminology metadata without persistent FHIR resources.
 Method Search(pResourceType As %String, pCompartment As %String, pCompartmentId As %String, pParameters As HS.FHIRServer.API.Data.QueryParameters = "", ByRef pSortKeys = "") As HS.FHIRServer.Util.SearchResult
 {
     Try {
@@ -88,6 +92,7 @@ Method Search(pResourceType As %String, pCompartment As %String, pCompartmentId 
     }
 }
 
+/// Leaves the built-in CapabilityStatement handling in place and reserves the terminology mode hook for future work.
 Method LoadMetadata() As %DynamicObject
 {
     // TerminologyCapabilities
@@ -126,6 +131,7 @@ Method SearchMetadataResources(pResourceType As %String, pParameters As HS.FHIRS
     Quit result
 }
 
+/// Converts neutral CodeSystem metadata rows into FHIR search result entries.
 Method AddCodeSystemRows(ByRef pSearchResult As HS.FHIRServer.Util.SearchResult, pItems As Terminology.Core.DTO.CodeSystemListResult) As %Status [ Private ]
 {
     If '$IsObject(pItems) {
@@ -147,6 +153,7 @@ Method AddCodeSystemRows(ByRef pSearchResult As HS.FHIRServer.Util.SearchResult,
     Quit $$$OK
 }
 
+/// Converts neutral ValueSet metadata rows into FHIR search result entries.
 Method AddValueSetRows(ByRef pSearchResult As HS.FHIRServer.Util.SearchResult, pItems As Terminology.Core.DTO.ValueSetListResult) As %Status [ Private ]
 {
     If '$IsObject(pItems) {
@@ -174,14 +181,16 @@ Method GetValueSetInfoAnySystem(pResourceId As %String, Output pInfo As Terminol
 {
     Set pInfo = ##class(Terminology.Core.DTO.ValueSetInfo).%New()
 
-    Set tSC = ##class(Terminology.Core.TermService).%New().GetValueSetInfo("snomed", pResourceId, .pInfo)
-    $$$ThrowOnError(tSC)
-    If pInfo.Id '= "" {
-        Return $$$OK
+    Set supportedSystems = ##class(Terminology.Core.TerminologyRegistry).GetSystemsSupportingFhirValueSets()
+    For systemIndex=1:1:$ListLength(supportedSystems) {
+        Set system = $List(supportedSystems, systemIndex)
+        Set tSC = ##class(Terminology.Core.TermService).%New().GetValueSetInfo(system, pResourceId, .pInfo)
+        $$$ThrowOnError(tSC)
+        If pInfo.Id '= "" {
+            Return $$$OK
+        }
     }
 
-    Set tSC = ##class(Terminology.Core.TermService).%New().GetValueSetInfo("loinc", pResourceId, .pInfo)
-    $$$ThrowOnError(tSC)
     Return $$$OK
 }
 
@@ -190,8 +199,9 @@ Method SearchValueSetsAcrossSystems(pService As Terminology.Core.TermService, By
 {
     Set pResult = ##class(Terminology.Core.DTO.ValueSetListResult).%New()
 
-    For systemIndex=1:1:$ListLength($LB("snomed","loinc")) {
-        Set system = $List($LB("snomed","loinc"), systemIndex)
+    Set supportedSystems = ##class(Terminology.Core.TerminologyRegistry).GetSystemsSupportingFhirValueSets()
+    For systemIndex=1:1:$ListLength(supportedSystems) {
+        Set system = $List(supportedSystems, systemIndex)
         Set tSC = pService.SearchValueSets(system, $Get(pFilters("url")), $Get(pFilters("_id")), $Get(pFilters("name")), $Get(pFilters("version")), .systemResult)
         $$$ThrowOnError(tSC)
 
@@ -208,6 +218,7 @@ Method SearchValueSetsAcrossSystems(pService As Terminology.Core.TermService, By
     Return $$$OK
 }
 
+/// Rejects unsupported search parameters and extracts the narrow filter set currently supported for metadata resources.
 Method ValidateSupportedSearchParameters(pResourceType As %String, pParameters As HS.FHIRServer.API.Data.QueryParameters = "", Output pFilters) As %Status [ Private ]
 {
     Kill pFilters
@@ -238,6 +249,7 @@ Method ValidateSupportedSearchParameters(pResourceType As %String, pParameters A
     Quit $$$OK
 }
 
+/// Reads one supported search parameter value and rejects modifiers that the metadata searches do not implement.
 Method GetSingleSearchParameterValue(pParameters As HS.FHIRServer.API.Data.QueryParameters, pName As %String) As %String [ Private ]
 {
     If '$IsObject(pParameters) {

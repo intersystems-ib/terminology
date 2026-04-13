@@ -1,0 +1,149 @@
+@baseUrl = http://localhost:52774/terminology/fhir/r4
+@username = superuser
+@password = SYS
+@systemUrl = http://id.who.int/icd/release/10
+@codeSystemId = icd-10
+@conceptCode = A01.0
+@ancestorCode = A01
+@valueSetId = icd-family-A00-A09
+@valueSetUrl = urn:iris:terminology:valueset:icd:family:A00-A09
+
+### CapabilityStatement
+GET {{baseUrl}}/metadata
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### TODO: TerminologyCapabilities
+GET {{baseUrl}}/metadata?mode=terminology
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem read by id
+GET {{baseUrl}}/CodeSystem/{{codeSystemId}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem search
+GET {{baseUrl}}/CodeSystem
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem search by url
+GET {{baseUrl}}/CodeSystem?url={{systemUrl}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem search by name
+GET {{baseUrl}}/CodeSystem?name=ICD10
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem $lookup by code
+GET {{baseUrl}}/CodeSystem/$lookup?system={{systemUrl}}&code={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem instance $lookup by code
+GET {{baseUrl}}/CodeSystem/{{codeSystemId}}/$lookup?code={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem $validate-code by code
+GET {{baseUrl}}/CodeSystem/$validate-code?system={{systemUrl}}&code={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem instance $validate-code by code
+GET {{baseUrl}}/CodeSystem/{{codeSystemId}}/$validate-code?code={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem $validate-code invalid example
+GET {{baseUrl}}/CodeSystem/$validate-code?system={{systemUrl}}&code=INVALID-CODE
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem $subsumes by code pair
+GET {{baseUrl}}/CodeSystem/$subsumes?system={{systemUrl}}&codeA={{ancestorCode}}&codeB={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem instance $subsumes by code pair
+GET {{baseUrl}}/CodeSystem/{{codeSystemId}}/$subsumes?codeA={{ancestorCode}}&codeB={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem $subsumes equivalent example
+GET {{baseUrl}}/CodeSystem/$subsumes?system={{systemUrl}}&codeA={{conceptCode}}&codeB={{conceptCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### CodeSystem $subsumes reverse direction
+GET {{baseUrl}}/CodeSystem/$subsumes?system={{systemUrl}}&codeA={{conceptCode}}&codeB={{ancestorCode}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet read by id
+GET {{baseUrl}}/ValueSet/{{valueSetId}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet search
+GET {{baseUrl}}/ValueSet
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet search by _id
+GET {{baseUrl}}/ValueSet?_id={{valueSetId}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet search by url
+GET {{baseUrl}}/ValueSet?url={{valueSetUrl}}
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet search by name
+GET {{baseUrl}}/ValueSet?name=ICDFamilyA00A09
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by url
+GET {{baseUrl}}/ValueSet/$expand?url={{valueSetUrl}}&count=10&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by url first page
+GET {{baseUrl}}/ValueSet/$expand?url={{valueSetUrl}}&count=25&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by url second page
+GET {{baseUrl}}/ValueSet/$expand?url={{valueSetUrl}}&count=25&offset=25
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by url small page size
+GET {{baseUrl}}/ValueSet/$expand?url={{valueSetUrl}}&count=5&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by id
+GET {{baseUrl}}/ValueSet/{{valueSetId}}/$expand?count=10&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by id first page
+GET {{baseUrl}}/ValueSet/{{valueSetId}}/$expand?count=25&offset=0
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by id second page
+GET {{baseUrl}}/ValueSet/{{valueSetId}}/$expand?count=25&offset=25
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}
+
+### ValueSet $expand by id deep offset
+GET {{baseUrl}}/ValueSet/{{valueSetId}}/$expand?count=25&offset=250
+Accept: application/fhir+json
+Authorization: Basic {{username}}:{{password}}

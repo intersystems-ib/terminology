@@ -109,7 +109,7 @@ ClassMethod ResolveLookupContext(pResourceId As %String, pRequestedSystem As %St
 
     Set requestedSystem = ..NormalizeSystem(pRequestedSystem)
     If requestedSystem = "" {
-        Set requestedSystem = $Select(resourceSystem'="":resourceSystem, 1:"http://snomed.info/sct")
+        Set requestedSystem = $Select(resourceSystem'="":resourceSystem, 1:##class(Terminology.Core.TerminologyRegistry).GetCodeSystemUri("snomed"))
     }
 
     If (resourceSystem '= "") && (requestedSystem '= resourceSystem) {
@@ -141,14 +141,16 @@ ClassMethod ResolveLookupContext(pResourceId As %String, pRequestedSystem As %St
 /// Accept the current MVP aliases explicitly while keeping unsupported systems out of the FHIR layer.
 ClassMethod NormalizeSystem(pSystem As %String) As %String [ Private ]
 {
-    If (pSystem = "") || ($ZCONVERT(pSystem, "L") = "snomed") || (pSystem = "http://snomed.info/sct") {
-        Return $Select(pSystem = "":"", 1:"http://snomed.info/sct")
-    }
-    If ($ZCONVERT(pSystem, "L") = "loinc") || (pSystem = "http://loinc.org") {
-        Return "http://loinc.org"
+    If pSystem = "" {
+        Return ""
     }
 
-    Quit pSystem
+    Set canonicalUri = ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemUri(pSystem)
+    If canonicalUri '= "" {
+        Return canonicalUri
+    }
+
+    Return pSystem
 }
 
 /// Builds a minimal Parameters resource for successful lookup responses.
@@ -192,9 +194,15 @@ ClassMethod GetLookupResultCode(pContext As %DynamicObject, pConcept) As %String
         Return ""
     }
 
+    Set systemId = ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemId(pContext.%Get("system"))
+
     // LOINC lookup DTOs expose the code as `LoincNum`, while SNOMED uses `ConceptId`.
-    If pContext.%Get("system") = "http://loinc.org" {
+    If systemId = "loinc" {
         Return ..GetPropertySafely(pConcept, "LoincNum")
+    }
+
+    If systemId = "icd-10" {
+        Return ..GetPropertySafely(pConcept, "Code")
     }
 
     Return ..GetPropertySafely(pConcept, "ConceptId")
@@ -207,8 +215,10 @@ ClassMethod GetLookupResultDisplay(pContext As %DynamicObject, pConcept) As %Str
         Return ""
     }
 
+    Set systemId = ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemId(pContext.%Get("system"))
+
     // LOINC does not provide one preferred-term field, so prefer the most user-facing labels first.
-    If pContext.%Get("system") = "http://loinc.org" {
+    If systemId = "loinc" {
         Set display = ..GetPropertySafely(pConcept, "LongCommonName")
         If display '= "" {
             Return display
@@ -227,6 +237,10 @@ ClassMethod GetLookupResultDisplay(pContext As %DynamicObject, pConcept) As %Str
         Return ..GetPropertySafely(pConcept, "ConsumerName")
     }
 
+    If systemId = "icd-10" {
+        Return ..GetPropertySafely(pConcept, "Description")
+    }
+
     Return ..GetPropertySafely(pConcept, "PreferredTerm")
 }
 
@@ -242,9 +256,11 @@ ClassMethod GetLookupResultDisplayFromConcept(pConcept) As %String
     // Validate-code may only have the lookup DTO instance, so infer the terminology from the class name.
     Set className = $Get(pConcept.%ClassName(1))
     If className["Terminology.Loinc." {
-        Do context.%Set("system", "http://loinc.org")
+        Do context.%Set("system", ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemUri("loinc"))
+    } ElseIf className["Terminology.ICD." {
+        Do context.%Set("system", ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemUri("icd-10"))
     } Else {
-        Do context.%Set("system", "http://snomed.info/sct")
+        Do context.%Set("system", ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemUri("snomed"))
     }
 
     Return ..GetLookupResultDisplay(context, pConcept)
@@ -266,7 +282,7 @@ ClassMethod BuildStringParameter(pName As %String, pValue As %String) As %Dynami
     Set parameter = ##class(%DynamicObject).%New()
     Do parameter.%Set("name", pName)
     Do parameter.%Set("valueString", pValue)
-    Quit parameter
+    Return parameter
 }
 
 }

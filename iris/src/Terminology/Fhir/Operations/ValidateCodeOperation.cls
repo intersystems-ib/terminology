@@ -103,7 +103,9 @@ ClassMethod BuildValidateCodeResponse(pInputs As %DynamicObject, pValidation, pC
     Set result = 0
     Set message = ""
 
-    If pValidation.Exists && pValidation.Active {
+    If '$IsObject(pValidation) {
+        Set message = "Code validation result is unavailable."
+    } ElseIf pValidation.Exists && pValidation.Active {
         Set result = 1
         Set message = "Code is valid in the code system."
     } ElseIf pValidation.Exists {
@@ -136,7 +138,7 @@ ClassMethod BuildBooleanParameter(pName As %String, pValue As %Boolean) As %Dyna
     Set parameter = ##class(%DynamicObject).%New()
     Do parameter.%Set("name", pName)
     Do parameter.%Set("valueBoolean", pValue)
-    Quit parameter
+    Return parameter
 }
 
 }

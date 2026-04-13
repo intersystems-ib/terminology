@@ -7,6 +7,17 @@ Class Terminology.Core.TermService Extends %RegisteredObject
 Method LookupCode(pSystem As %String = "snomed", pCode As %String = "", pVersion As %String = "", pLang As %String = "", pDialect As %String = "", Output pResult) As %Status
 {
     Do ##class(Terminology.Core.Trace).Log("service", "LookupCode", "system="_pSystem_" code="_pCode_" version="_pVersion_" lang="_pLang_" dialect="_pDialect)
+
+    If ..NormalizeCodeSystemUrl(pSystem) = ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemUri("icd-10") {
+        Return ##class(Terminology.ICD.ICDAdapter).%New().LookupCode(
+            ..ResolveIcdReleaseId(pVersion),
+            ..ResolveIcdVersionNumber(pSystem),
+            "DIAGNOSIS",
+            pCode,
+            .pResult
+        )
+    }
+
     Return ..ResolveAdapter(pSystem).LookupCode(pCode, pVersion, pLang, pDialect, .pResult)
 }
 
@@ -15,6 +26,17 @@ Method LookupCode(pSystem As %String = "snomed", pCode As %String = "", pVersion
 Method ValidateCode(pSystem As %String = "snomed", pVersion As %String = "", pCode As %String = "", Output pResult) As %Status
 {
     Do ##class(Terminology.Core.Trace).Log("service", "ValidateCode", "system="_pSystem_" code="_pCode_" version="_pVersion)
+
+    If ..NormalizeCodeSystemUrl(pSystem) = ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemUri("icd-10") {
+        Return ##class(Terminology.ICD.ICDAdapter).%New().ValidateCode(
+            ..ResolveIcdReleaseId(pVersion),
+            ..ResolveIcdVersionNumber(pSystem),
+            "DIAGNOSIS",
+            pCode,
+            .pResult
+        )
+    }
+
     Return ..ResolveAdapter(pSystem).ValidateCode(pVersion, pCode, .pResult)
 }
 
@@ -23,6 +45,18 @@ Method ValidateCode(pSystem As %String = "snomed", pVersion As %String = "", pCo
 Method Subsumes(pSystem As %String = "snomed", pVersion As %String = "", pView As %String = "", pCodeA As %String = "", pCodeB As %String = "", Output pResult) As %Status
 {
     Do ##class(Terminology.Core.Trace).Log("service", "Subsumes", "system="_pSystem_" version="_pVersion_" view="_pView_" codeA="_pCodeA_" codeB="_pCodeB)
+
+    If ..NormalizeCodeSystemUrl(pSystem) = ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemUri("icd-10") {
+        Return ##class(Terminology.ICD.ICDAdapter).%New().Subsumes(
+            ..ResolveIcdReleaseId(pVersion),
+            ..ResolveIcdVersionNumber(pSystem),
+            "DIAGNOSIS",
+            pCodeA,
+            pCodeB,
+            .pResult
+        )
+    }
+
     Return ..ResolveAdapter(pSystem).Subsumes(pVersion, pView, pCodeA, pCodeB, .pResult)
 }
 
@@ -129,7 +163,34 @@ Method SearchCodeSystems(pUrl As %String = "", pId As %String = "", pName As %St
 Method SearchValueSets(pSystem As %String = "snomed", pUrl As %String = "", pId As %String = "", pName As %String = "", pVersion As %String = "", Output pResult As Terminology.Core.DTO.ValueSetListResult) As %Status
 {
     Do ##class(Terminology.Core.Trace).Log("service", "SearchValueSets", "system="_pSystem_" url="_pUrl_" id="_pId_" name="_pName_" version="_pVersion)
-    Return ..ResolveAdapter(pSystem).SearchValueSets(pUrl, pId, pName, pVersion, .pResult)
+    Set pResult = ##class(Terminology.Core.DTO.ValueSetListResult).%New()
+    Set normalizedName = ""
+    If $Get(pName)'="" {
+        Set normalizedName = $ZCONVERT(##class(Terminology.Fhir.ResourceMapper).NormalizeFhirName(pName), "L")
+    }
+
+    Set tSC = ..ResolveAdapter(pSystem).SearchValueSets(pUrl, pId, "", pVersion, .searchResult)
+    $$$ThrowOnError(tSC)
+
+    If '$IsObject(searchResult) {
+        Return $$$OK
+    }
+
+    For index=1:1:searchResult.Items.Count() {
+        Set item = searchResult.Items.GetAt(index)
+        If '$IsObject(item) {
+            Continue
+        }
+
+        If (normalizedName '= "") && ($ZCONVERT(##class(Terminology.Fhir.ResourceMapper).NormalizeFhirName(item.Name), "L") '= normalizedName) {
+            Continue
+        }
+
+        Do pResult.Items.Insert(item)
+    }
+
+    Set pResult.Count = $Select($IsObject(pResult.Items):pResult.Items.Count(), 1:0)
+    Return $$$OK
 }
 
 /// Returns minimal value set metadata and members for the supported terminology-specific FHIR expand paths.
@@ -145,9 +206,14 @@ Method ExpandValueSet(pSystem As %String = "snomed", pValueSetId As %String = ""
         Return $$$OK
     }
 
-    If ($ZCONVERT(pSystem, "L") = "loinc") || (pSystem = "http://loinc.org") {
+    If ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemId(pSystem) = "loinc" {
         Set pMembers = ##class(Terminology.Loinc.DTO.GroupMemberResult).%New()
         Return ##class(Terminology.Loinc.LoincAdapter).%New().ExpandValueSetMembers(pValueSetId, pInfo.Version, pLang, pCount, pOffset, .pMembers)
+    }
+
+    If ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemId(pSystem) = "icd-10" {
+        Set pMembers = ##class(Terminology.ICD.DTO.SearchResult).%New()
+        Return ##class(Terminology.ICD.ICDAdapter).%New().ExpandValueSetMembers(pValueSetId, pInfo.Version, pLang, pCount, pOffset, .pMembers)
     }
 
     Set pMembers = ##class(Terminology.Snomed.DTO.RefsetMemberListResult).%New()
@@ -159,23 +225,9 @@ Method ExpandValueSet(pSystem As %String = "snomed", pValueSetId As %String = ""
 /// The return type is generic because the adapters do not share one concrete class.
 Method ResolveAdapter(pSystem As %String = "snomed") As %RegisteredObject [ Private ]
 {
-    Set normalized = ..NormalizeCodeSystemUrl(pSystem)
-
-    If (normalized = "") || ($ZCONVERT(normalized, "L") = "snomed") || ($ZCONVERT(normalized, "L") = "http://snomed.info/sct") {
-        Quit ##class(Terminology.Snomed.SnomedAdapter).%New()
-    }
-
-    If ($ZCONVERT(normalized, "L") = "loinc") || ($ZCONVERT(normalized, "L") = "http://loinc.org") {
-        Quit ##class(Terminology.Loinc.LoincAdapter).%New()
-    }
-
-    If ($ZCONVERT(normalized, "L") = "cie")
-        || ($ZCONVERT(normalized, "L") = "cie10")
-        || ($ZCONVERT(normalized, "L") = "cie-10")
-        || ($ZCONVERT(normalized, "L") = "icd10")
-        || ($ZCONVERT(normalized, "L") = "icd-10")
-        || ($ZCONVERT(normalized, "L") = "http://hl7.org/fhir/sid/icd-10") {
-        Quit ##class(Terminology.ICD.ICDAdapter).%New()
+    Set adapterClass = ##class(Terminology.Core.TerminologyRegistry).GetAdapterClass(pSystem)
+    If adapterClass '= "" {
+        Return $ClassMethod(adapterClass, "%New")
     }
 
     Set tSC = $$$ERROR($$$NotImplemented, "Unsupported terminology system: "_pSystem)
@@ -185,80 +237,52 @@ Method ResolveAdapter(pSystem As %String = "snomed") As %RegisteredObject [ Priv
 /// Keeps the current single-system FHIR ids explicit until multiple code systems are modeled.
 Method BuildCodeSystemId(pSystemUri As %String = "") As %String [ Private ]
 {
-    If pSystemUri = "http://snomed.info/sct" {
-        Return "snomed"
+    Set codeSystemId = ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemId(pSystemUri)
+    If codeSystemId '= "" {
+        Return codeSystemId
     }
-    If pSystemUri = "http://loinc.org" {
-        Return "loinc"
-    }
-    
 
-    Return $ZCONVERT(pSystemUri, "L")
+    Return $ZCONVERT($Get(pSystemUri), "L")
 }
 
 /// Resolves the current MVP FHIR logical id to a code system canonical url.
 Method ResolveCodeSystemUri(pId As %String = "") As %String [ Private ]
 {
-    Set normalized = ..NormalizeCodeSystemUrl(pId)
-    If (normalized = "") || ($ZCONVERT(normalized, "L") = "snomed") || ($ZCONVERT(normalized, "L") = "http://snomed.info/sct") {
-        Return "http://snomed.info/sct"
-    }
-    If ($ZCONVERT(normalized, "L") = "loinc") || ($ZCONVERT(normalized, "L") = "http://loinc.org") {
-        Return "http://loinc.org"
-    }
-    If ($ZCONVERT(normalized, "L") = "cie")
-        || ($ZCONVERT(normalized, "L") = "cie10")
-        || ($ZCONVERT(normalized, "L") = "cie-10")
-        || ($ZCONVERT(normalized, "L") = "icd10")
-        || ($ZCONVERT(normalized, "L") = "icd-10")
-        || ($ZCONVERT(normalized, "L") = "http://hl7.org/fhir/sid/icd-10") {
-        Return "http://hl7.org/fhir/sid/icd-10"
-    }
-    Return ""
+    Return ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemUri(pId)
 }
 
 Method NormalizeCodeSystemUrl(pValue As %String = "") As %String [ Private ]
 {
-    Set normalized = $ZSTRIP(pValue, "<>W")
+    Set canonicalUri = ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemUri(pValue)
+    If canonicalUri '= "" {
+        Return canonicalUri
+    }
 
+    Set normalized = $ZSTRIP($Get(pValue), "<>W")
     If normalized = "" {
         Return ""
     }
-
     If $Find(normalized, "|") {
         Set normalized = $Piece(normalized, "|", 1)
     }
-
     If ($Extract(normalized, *) = "/") {
         Set normalized = $Extract(normalized, 1, *-1)
     }
+    Return $ZCONVERT(normalized, "L")
+}
 
-    If $ZCONVERT(normalized, "L") = "http://snomed.info/sct" {
-        Return "http://snomed.info/sct"
+Method ResolveIcdReleaseId(pVersion As %String = "") As %String [ Private ]
+{
+    Return pVersion
+}
+
+Method ResolveIcdVersionNumber(pSystem As %String = "") As %Integer [ Private ]
+{
+    If ..NormalizeCodeSystemUrl(pSystem) = ##class(Terminology.Core.TerminologyRegistry).GetCodeSystemUri("icd-10") {
+        Return 10
     }
 
-    If $ZCONVERT(normalized, "L") = "snomed" {
-        Return "snomed"
-    }
-
-    If $ZCONVERT(normalized, "L") = "http://loinc.org" {
-        Return "http://loinc.org"
-    }
-
-    If $ZCONVERT(normalized, "L") = "loinc" {
-        Return "loinc"
-    }
-
-    If ($ZCONVERT(normalized, "L") = "cie")
-        || ($ZCONVERT(normalized, "L") = "cie10")
-        || ($ZCONVERT(normalized, "L") = "cie-10")
-        || ($ZCONVERT(normalized, "L") = "icd10")
-        || ($ZCONVERT(normalized, "L") = "icd-10")
-        || ($ZCONVERT(normalized, "L") = "http://hl7.org/fhir/sid/icd-10") {
-        Return "http://hl7.org/fhir/sid/icd-10"
-    }
-
-    Return normalized
+    Return 10
 }
 
 }
