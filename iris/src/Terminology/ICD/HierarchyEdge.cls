@@ -1,4 +1,4 @@
-Class Terminology.CIE.HierarchyEdge Extends (%Persistent, %Populate, %JSON.Adaptor)
+Class Terminology.ICD.HierarchyEdge Extends (%Persistent, %Populate, %JSON.Adaptor)
 {
 
 Property ReleaseId As %String(MAXLEN = 64) [ Required ];
@@ -51,11 +51,11 @@ Storage Default
 <Value>Depth</Value>
 </Value>
 </Data>
-<DataLocation>^Terminology.CIE.HierarchyEdgeD</DataLocation>
+<DataLocation>^Terminology.ICD.HierarchyEdgeD</DataLocation>
 <DefaultData>HierarchyEdgeDefaultData</DefaultData>
-<IdLocation>^Terminology.CIE.HierarchyEdgeD</IdLocation>
-<IndexLocation>^Terminology.CIE.HierarchyEdgeI</IndexLocation>
-<StreamLocation>^Terminology.CIE.HierarchyEdgeS</StreamLocation>
+<IdLocation>^Terminology.ICD.HierarchyEdgeD</IdLocation>
+<IndexLocation>^Terminology.ICD.HierarchyEdgeI</IndexLocation>
+<StreamLocation>^Terminology.ICD.HierarchyEdgeS</StreamLocation>
 <Type>%Storage.Persistent</Type>
 }
 
