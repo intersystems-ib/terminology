@@ -86,7 +86,7 @@ IRIS production / file intake
   |
   +--> LOINC load + build
   |
-  +--> CIE load + build
+  +--> ICD load + build
   |
   v
 Terminology-specific source and runtime tables
@@ -218,14 +218,14 @@ Source/runtime tables:
 - `Terminology_Loinc.LoincGroup`
 - `Terminology_Loinc.GroupMember`
 
-### CIE Data model
+### ICD Data model
 
 Source/runtime tables:
 
-- `Terminology_CIE.Chapter`
-- `Terminology_CIE.Code`
-- `Terminology_CIE.Family`
-- `Terminology_CIE.HierarchyEdge`
+- `Terminology_ICD.Chapter`
+- `Terminology_ICD.Code`
+- `Terminology_ICD.Family`
+- `Terminology_ICD.HierarchyEdge`
 
 ### Shared Metadata
 
@@ -244,7 +244,7 @@ Current examples:
 
 - SNOMED packages under `iris/shared/in/snomed/`
 - LOINC packages under `iris/shared/in/loinc/`
-- CIE packages under `iris/shared/in/cie/`
+- ICD packages under `iris/shared/in/icd/`
 
 The IRIS production detects those files and starts the appropriate terminology load flow.
 
@@ -313,7 +313,7 @@ Current examples:
 
 - `Terminology.Snomed.SnomedAdapter`
 - `Terminology.Loinc.LoincAdapter`
-- `Terminology.CIE.CIEAdapter`
+- `Terminology.ICD.ICDAdapter`
 
 ### Repository Layer
 
@@ -327,7 +327,7 @@ Current examples:
 
 - `Terminology.Snomed.SnomedRepository`
 - `Terminology.Loinc.LoincRepository`
-- `Terminology.CIE.CIERepository`
+- `Terminology.ICD.ICDRepository`
 
 ### Load / Build Layer
 
@@ -363,7 +363,7 @@ Core terminology contracts
   |
   +--> SNOMED adapter
   +--> LOINC adapter
-  +--> CIE adapter
+  +--> ICD adapter
   +--> future terminology adapters
 ```
 

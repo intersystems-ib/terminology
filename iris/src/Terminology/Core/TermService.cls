@@ -170,10 +170,12 @@ Method ResolveAdapter(pSystem As %String = "snomed") As %RegisteredObject [ Priv
     }
 
     If ($ZCONVERT(normalized, "L") = "cie")
+        || ($ZCONVERT(normalized, "L") = "cie10")
+        || ($ZCONVERT(normalized, "L") = "cie-10")
         || ($ZCONVERT(normalized, "L") = "icd10")
         || ($ZCONVERT(normalized, "L") = "icd-10")
         || ($ZCONVERT(normalized, "L") = "http://hl7.org/fhir/sid/icd-10") {
-        Quit ##class(Terminology.CIE.CIEAdapter).%New()
+        Quit ##class(Terminology.ICD.ICDAdapter).%New()
     }
 
     Set tSC = $$$ERROR($$$NotImplemented, "Unsupported terminology system: "_pSystem)
@@ -205,6 +207,8 @@ Method ResolveCodeSystemUri(pId As %String = "") As %String [ Private ]
         Return "http://loinc.org"
     }
     If ($ZCONVERT(normalized, "L") = "cie")
+        || ($ZCONVERT(normalized, "L") = "cie10")
+        || ($ZCONVERT(normalized, "L") = "cie-10")
         || ($ZCONVERT(normalized, "L") = "icd10")
         || ($ZCONVERT(normalized, "L") = "icd-10")
         || ($ZCONVERT(normalized, "L") = "http://hl7.org/fhir/sid/icd-10") {
@@ -246,6 +250,8 @@ Method NormalizeCodeSystemUrl(pValue As %String = "") As %String [ Private ]
     }
 
     If ($ZCONVERT(normalized, "L") = "cie")
+        || ($ZCONVERT(normalized, "L") = "cie10")
+        || ($ZCONVERT(normalized, "L") = "cie-10")
         || ($ZCONVERT(normalized, "L") = "icd10")
         || ($ZCONVERT(normalized, "L") = "icd-10")
         || ($ZCONVERT(normalized, "L") = "http://hl7.org/fhir/sid/icd-10") {

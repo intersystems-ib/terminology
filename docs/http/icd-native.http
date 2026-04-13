@@ -1,0 +1,76 @@
+@baseUrl = http://localhost:52774/terminology/icd
+@releaseId = ICD-10-ES 2026
+@version = 10
+@codeType = DIAGNOSIS
+@familyCode = A00-A09
+@parentCode = A01
+@childCode = A01.0
+@leafCode = A01.00
+@searchText = fiebre
+@username = superuser
+@password = SYS
+
+### Search codes
+GET {{baseUrl}}/search?q={{searchText}}&releaseId={{releaseId}}&version={{version}}&codeType={{codeType}}&limit=20&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get code by code: A01.00
+GET {{baseUrl}}/codes/{{leafCode}}?releaseId={{releaseId}}&version={{version}}&codeType={{codeType}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get children: A01 direct children
+GET {{baseUrl}}/codes/{{parentCode}}/children?releaseId={{releaseId}}&version={{version}}&codeType={{codeType}}&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get descendants: A01 descendants
+GET {{baseUrl}}/codes/{{parentCode}}/descendants?releaseId={{releaseId}}&version={{version}}&codeType={{codeType}}&includeSelf=0&maxDepth=10&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get ancestors: A01.00 ancestors
+GET {{baseUrl}}/codes/{{leafCode}}/ancestors?releaseId={{releaseId}}&version={{version}}&codeType={{codeType}}&includeSelf=0&maxDepth=10&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get ancestors: A01.00 ancestors including self
+GET {{baseUrl}}/codes/{{leafCode}}/ancestors?releaseId={{releaseId}}&version={{version}}&codeType={{codeType}}&includeSelf=1&maxDepth=10&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get descendants: A01 including self
+GET {{baseUrl}}/codes/{{parentCode}}/descendants?releaseId={{releaseId}}&version={{version}}&codeType={{codeType}}&includeSelf=1&maxDepth=10&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### List families
+GET {{baseUrl}}/families?releaseId={{releaseId}}&version={{version}}&codeType={{codeType}}&limit=100&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Validate code: A01
+GET {{baseUrl}}/validate-code?releaseId={{releaseId}}&version={{version}}&codeType={{codeType}}&code={{parentCode}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Validate code: A01.00
+GET {{baseUrl}}/validate-code?releaseId={{releaseId}}&version={{version}}&codeType={{codeType}}&code={{leafCode}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Validate code: non existing
+GET {{baseUrl}}/validate-code?releaseId={{releaseId}}&version={{version}}&codeType={{codeType}}&code=A99.999
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Search procedures example
+GET {{baseUrl}}/search?q=apendicectomia&releaseId={{releaseId}}&version={{version}}&codeType=PROCEDURE&limit=20&offset=0
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Get procedure code example
+GET {{baseUrl}}/codes/0DTJ0ZZ?releaseId={{releaseId}}&version={{version}}&codeType=PROCEDURE
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
