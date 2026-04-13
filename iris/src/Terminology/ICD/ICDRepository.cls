@@ -383,27 +383,23 @@ Method BuildQuery(pSql As %String, pWhereList As %List = "", pEndSql As %String 
 Method ExecuteQuery(pQuery As %String, ByRef pArgs, pArgCount As %Integer, Output pResultSet As %SQL.StatementResult) As %Status [ Private ]
 {
     Try {
+        Set traceStart = $ZHOROLOG
         Set statement = ##class(%SQL.Statement).%New()
         $$$ThrowOnError(statement.%Prepare(pQuery))
 
-        Set pResultSet = $Case(pArgCount,
-            0: statement.%Execute(),
-            1: statement.%Execute($Get(pArgs(1))),
-            2: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2))),
-            3: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2)), $Get(pArgs(3))),
-            4: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2)), $Get(pArgs(3)), $Get(pArgs(4))),
-            5: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2)), $Get(pArgs(3)), $Get(pArgs(4)), $Get(pArgs(5))),
-            6: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2)), $Get(pArgs(3)), $Get(pArgs(4)), $Get(pArgs(5)), $Get(pArgs(6))),
-            7: statement.%Execute($Get(pArgs(1)), $Get(pArgs(2)), $Get(pArgs(3)), $Get(pArgs(4)), $Get(pArgs(5)), $Get(pArgs(6)), $Get(pArgs(7))),
-            : $$$NULLOREF
-        )
-
-        If pResultSet=$$$NULLOREF {
-            Return $$$ERROR($$$GeneralError, "Too many SQL arguments")
+        If pArgCount>0 {
+            Set pArgs = pArgCount
+            Set pResultSet = statement.%Execute(pArgs...)
+        } Else {
+            Set pResultSet = statement.%Execute()
         }
+
+        Do ##class(Terminology.Core.Trace).LogSQL("Terminology.ICD.ICDRepository.ExecuteQuery", pQuery, .pArgs, pArgCount, ##class(Terminology.Core.Trace).ElapsedMilliseconds(traceStart))
 
         Return $$$OK
     } Catch ex {
+        Do ##class(Terminology.Core.Trace).LogError("sql", "Terminology.ICD.ICDRepository.ExecuteQuery", ex.DisplayString())
+        Do ##class(Terminology.Core.Trace).LogSQL("Terminology.ICD.ICDRepository.ExecuteQuery", pQuery, .pArgs, pArgCount, ##class(Terminology.Core.Trace).ElapsedMilliseconds($Get(traceStart)), "ERROR")
         Return $$$ERROR($$$GeneralError, ex.DisplayString())
     }
 }

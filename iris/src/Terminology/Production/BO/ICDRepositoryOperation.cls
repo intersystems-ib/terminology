@@ -35,11 +35,18 @@ Method OnMessage(pRequest As Ens.Request, Output pResponse As Ens.Response) As %
     Return $$$ERROR($$$NotImplemented, "Unsupported message type for ICDRepositoryOperation")
 }
 
+Method RestoreTraceContext(pRequest As Terminology.Production.Msg.BaseRequest) As %Status [ Private ]
+{
+    Return ##class(Terminology.Core.Trace).RestoreRequestContext(pRequest)
+}
+
 Method HandleSearch(pRequest As Terminology.Production.Msg.ICDSearchRequest, Output pResponse As Terminology.Production.Msg.ICDSearchResponse) As %Status
 {
     Set pResponse = ##class(Terminology.Production.Msg.ICDSearchResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetICDAdapter().SearchConcepts(
             pRequest.ReleaseId,
             pRequest.Version,
@@ -62,6 +69,8 @@ Method HandleGetCode(pRequest As Terminology.Production.Msg.ICDGetCodeRequest, O
     Set pResponse = ##class(Terminology.Production.Msg.ICDGetCodeResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetICDAdapter().LookupCode(
             pRequest.ReleaseId,
             pRequest.Version,
@@ -82,6 +91,8 @@ Method HandleGetChildren(pRequest As Terminology.Production.Msg.ICDGetChildrenRe
     Set pResponse = ##class(Terminology.Production.Msg.ICDGetChildrenResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetICDAdapter().GetChildren(
             pRequest.ReleaseId,
             pRequest.Version,
@@ -104,6 +115,8 @@ Method HandleGetDescendants(pRequest As Terminology.Production.Msg.ICDGetDescend
     Set pResponse = ##class(Terminology.Production.Msg.ICDGetDescendantsResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetICDAdapter().GetDescendants(
             pRequest.ReleaseId,
             pRequest.Version,
@@ -128,6 +141,8 @@ Method HandleGetAncestors(pRequest As Terminology.Production.Msg.ICDGetAncestors
     Set pResponse = ##class(Terminology.Production.Msg.ICDGetAncestorsResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetICDAdapter().GetAncestors(
             pRequest.ReleaseId,
             pRequest.Version,
@@ -152,6 +167,8 @@ Method HandleGetFamilies(pRequest As Terminology.Production.Msg.ICDGetFamiliesRe
     Set pResponse = ##class(Terminology.Production.Msg.ICDGetFamiliesResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetICDAdapter().GetFamilies(
             pRequest.ReleaseId,
             pRequest.Version,
@@ -173,6 +190,8 @@ Method HandleValidateCode(pRequest As Terminology.Production.Msg.ICDValidateCode
     Set pResponse = ##class(Terminology.Production.Msg.ICDValidateCodeResponse).%New()
 
     Try {
+        Set tSC = ..RestoreTraceContext(pRequest)
+        $$$ThrowOnError(tSC)
         Set tSC = ..GetICDAdapter().ValidateCode(
             pRequest.ReleaseId,
             pRequest.Version,
