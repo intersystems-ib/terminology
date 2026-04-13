@@ -16,7 +16,7 @@
  set metadataPackages = $lb("hl7.fhir.r4.core@4.0.1")
  set displayName = "Terminology FHIR Server"
  
- //do ##class(HS.FHIRServer.Installer).InstallNamespace()
+ do ##class(HS.Util.Installer.Foundation).Install("TERMINOLOGY")
  do ##class(HS.FHIRServer.Installer).InstallInstance(appKey, strategyClass, metadataPackages, "", "", 1, "", "", displayName)
  
  // update fhir server: DebugMode=3 useful while developing
