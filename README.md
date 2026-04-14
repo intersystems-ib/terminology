@@ -30,6 +30,7 @@ The goal is to show how to structure a terminology server on IRIS so that each t
 - SNOMED CT ingestion from RF2 releases
 - LOINC ingestion from release packages
 - ICD ingestion and native + FHIR API support
+- a demo web UI under `ui/` for exploring SNOMED CT, LOINC and ICD through native and FHIR APIs
 - terminology-specific source and runtime-optimized storage
 - native REST APIs under `/terminology/snomed`, `/terminology/loinc` and `/terminology/icd`
 - a shared FHIR R4 terminology surface under `/terminology/fhir/r4`
@@ -121,7 +122,9 @@ docker compose up -d
 
 5. Verify the server using the HTTP examples under `docs/http/`.
 
-6. Run the unit tests described in [docs/getting-started.md](docs/getting-started.md).
+6. Optionally run the demo UI from `ui/` using the instructions in [docs/getting-started.md](docs/getting-started.md).
+
+7. Run the unit tests described in [docs/getting-started.md](docs/getting-started.md).
 
 For the full setup and verification flow, see [docs/getting-started.md](docs/getting-started.md).
 
@@ -129,6 +132,7 @@ For the full setup and verification flow, see [docs/getting-started.md](docs/get
 
 - [ARCHITECTURE.md](ARCHITECTURE.md): architecture, layer rationale and target direction
 - [docs/getting-started.md](docs/getting-started.md): build, start, load, verify the project and use `^TSTrace` for request debugging
+- [ui/README.md](ui/README.md): run the demo UI with the Vite dev server and build it for deployment
 - [docs/how-it-works.md](docs/how-it-works.md): narrative walkthrough for developers and partners new to the repo, including terminology request tracing
 - [FHIR_SCOPE.md](FHIR_SCOPE.md): current FHIR terminology scope and rollout approach
 - [CONVENTIONS.md](CONVENTIONS.md): coding, layering and documentation rules

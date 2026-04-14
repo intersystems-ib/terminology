@@ -1,12 +1,5 @@
 # UI
 
-<<<<<<< ours
-Frontend MVP for the terminology demo application.
-
-## Local Development
-
-1. Start the IRIS stack from the repo root:
-=======
 Frontend MVP for the terminology demo application in this repository.
 
 This UI is intended to support partner and customer demos around the terminology server built on InterSystems IRIS for Health.
@@ -41,28 +34,11 @@ Current workspace behavior:
 ### 1. Start IRIS
 
 From the repository root:
->>>>>>> theirs
 
 ```bash
 docker compose up -d
 ```
 
-<<<<<<< ours
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Start the UI:
-
-```bash
-npm run dev
-```
-
-The app runs at `http://localhost:5173`.
-Use the IRIS server URL `http://localhost:52774` on the login screen by default.
-=======
 This starts the IRIS-based terminology server used by the UI.
 
 ### 2. Start The UI Dev Server
@@ -107,15 +83,11 @@ Example local credentials:
 
 ## Build
 
-### Default Build
-
-To produce a production build for a root-mounted deployment:
+To produce a production build:
 
 ```bash
 npm run build
 ```
-
-### Build Output
 
 The generated files are written to:
 
