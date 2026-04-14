@@ -214,9 +214,6 @@ export function IcdWorkspace() {
       <section className="content-panel workspace-main">
         <div className="workspace-header">
           <div className="workspace-heading">
-            <div className="workspace-title-mark" aria-hidden="true">
-              <TerminologyIcon />
-            </div>
             <div>
               <p className="eyebrow">ICD Workspace</p>
               <h2 className="section-title">Explore ICD through native and FHIR terminology APIs.</h2>
@@ -640,22 +637,6 @@ function renderTabFields(
         </>
       );
   }
-}
-
-function TerminologyIcon() {
-  return (
-    <svg viewBox="0 0 32 32" className="workspace-svg-icon">
-      <rect x="5" y="6" width="22" height="20" rx="6" fill="currentColor" opacity="0.14" />
-      <path
-        d="M10 12h12M10 16h9M10 20h6M22 10v12M18 14l4-4 4 4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 }
 
 function OperationIcon() {

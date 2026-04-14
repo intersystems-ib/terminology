@@ -218,16 +218,13 @@ export function SnomedWorkspace() {
       <section className="content-panel workspace-main">
         <div className="workspace-header">
           <div className="workspace-heading">
-            <div className="workspace-title-mark" aria-hidden="true">
-              <TerminologyIcon />
-            </div>
             <div>
-            <p className="eyebrow">SNOMED CT Workspace</p>
-            <h2 className="section-title">Explore one terminology through native and FHIR APIs.</h2>
-            <p className="section-copy">
-              Stay inside the SNOMED context, switch the execution mode, and run demo-friendly actions using the same
-              example values from the repo HTTP files.
-            </p>
+              <p className="eyebrow">SNOMED CT Workspace</p>
+              <h2 className="section-title">Explore one terminology through native and FHIR APIs.</h2>
+              <p className="section-copy">
+                Stay inside the SNOMED context, switch the execution mode, and run demo-friendly actions using the same
+                example values from the repo HTTP files.
+              </p>
             </div>
           </div>
           <div className="workspace-meta">
@@ -405,22 +402,6 @@ export function SnomedWorkspace() {
         </section>
       </section>
     </main>
-  );
-}
-
-function TerminologyIcon() {
-  return (
-    <svg viewBox="0 0 32 32" className="workspace-svg-icon">
-      <rect x="4" y="6" width="24" height="20" rx="6" fill="currentColor" opacity="0.14" />
-      <path
-        d="M10 12h12M10 16h8M10 20h10M23 11l3 3-3 3"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
 

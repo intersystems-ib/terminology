@@ -214,9 +214,6 @@ export function LoincWorkspace() {
       <section className="content-panel workspace-main">
         <div className="workspace-header">
           <div className="workspace-heading">
-            <div className="workspace-title-mark" aria-hidden="true">
-              <TerminologyIcon />
-            </div>
             <div>
               <p className="eyebrow">LOINC Workspace</p>
               <h2 className="section-title">Explore LOINC through native and FHIR terminology APIs.</h2>
@@ -664,22 +661,6 @@ function renderTabFields(
         </>
       );
   }
-}
-
-function TerminologyIcon() {
-  return (
-    <svg viewBox="0 0 32 32" className="workspace-svg-icon">
-      <rect x="5" y="6" width="22" height="20" rx="6" fill="currentColor" opacity="0.14" />
-      <path
-        d="M11 12h10M11 16h7M11 20h5M21 20h3M22 11l2 2-2 2"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 }
 
 function OperationIcon() {
