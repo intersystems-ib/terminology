@@ -1,7 +1,7 @@
 Class Terminology.Production.API Extends (%CSP.REST, Ens.BusinessService)
 {
 
-Parameter HandleCorsRequest = 0;
+Parameter HandleCorsRequest = 1;
 
 Parameter CHARSET = "utf-8";
 
@@ -22,6 +22,7 @@ Parameter ICDGatewayConfigName = "ICDGatewayService";
 XData UrlMap
 {
 <Routes>
+    <Route Url="/auth/login" Method="GET" Call="AppLogin"/>
     <Route Url="/snomed/search" Method="GET" Call="SnomedSearch"/>
     <Route Url="/snomed/concepts/:conceptId" Method="GET" Call="SnomedGetConcept"/>
     <Route Url="/snomed/concepts/:conceptId/children" Method="GET" Call="SnomedGetChildren"/>
@@ -51,20 +52,18 @@ XData UrlMap
 </Routes>
 }
 
-ClassMethod OnHandleCorsRequest(url As %String) As %Status
+ClassMethod AppLogin() As %Status
 {
-	set url = %request.GetCgiEnv("HTTP_REFERER")
-    set origin = $p(url,"/",1,3) // origin = "http(s)://origin.com:port"
+    Set %response.ContentType = "application/json"
 
-    // here you can check specific origins
-    // otherway, it will allow all origins (useful while developing only)
+    Set obj = {}
+    Set obj.ok = 1
+    Set obj.message = "OK"
 
-	do %response.SetHeader("Access-Control-Allow-Credentials","true")
-	do %response.SetHeader("Access-Control-Allow-Methods","GET,POST,PUT,DELETE,OPTIONS")
-	do %response.SetHeader("Access-Control-Allow-Origin",origin)
-	do %response.SetHeader("Access-Control-Allow-Headers","Access-Control-Allow-Origin, Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control")
-	return $$$OK
+    Write obj.%ToJSON()
+    Return $$$OK
 }
+
 
 ClassMethod SnomedSearch() As %Status
 {

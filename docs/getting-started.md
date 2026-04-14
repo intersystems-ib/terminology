@@ -177,6 +177,46 @@ Use:
 
 This is useful when you want to inspect stored source and runtime data directly.
 
+## Run The Demo UI
+
+The repository also includes a demo web UI under `ui/`.
+
+Use it when you want a partner-facing or customer-facing walkthrough of the currently implemented terminology behavior.
+
+From `ui/`:
+
+```bash
+npm install
+npm run dev
+```
+
+Then open:
+
+```text
+http://localhost:5173
+```
+
+Use the local terminology server URL:
+
+```text
+http://localhost:52774
+```
+
+The login flow validates the supplied Basic auth credentials through:
+
+```text
+GET /terminology/auth/login
+```
+
+After login, the UI currently provides:
+
+- a home screen with `SNOMED CT`, `LOINC` and `ICD` cards
+- one workspace per terminology
+- a `Native API` and `FHIR API` switch inside each workspace
+- operation, result and technical-view sections for demoing live request behavior
+
+For UI-specific notes and build options, see [ui/README.md](../ui/README.md).
+
 ## Run Unit Tests
 
 The repository includes initial `%UnitTest` suites for:

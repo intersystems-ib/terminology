@@ -13,6 +13,9 @@
 		"workbench.colorTheme": "InterSystems Default Dark Modern",
 		"files.associations": {
         	"iris.script": "objectscript"
-    	}
+		},
+		"objectscript.conn": {
+			"active": true
+		}
 	}
 }

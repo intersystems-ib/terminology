@@ -31,3 +31,15 @@
  set ^Ens.Configuration("csp","LastProduction") = production
  do ##class(Ens.Director).SetAutoStart(production)
  do ##class(Ens.Director).StartProduction(production)
+
+ zn "%SYS"
+
+ // config webapplications (cors)
+ set properties("CorsAllowlist")="http://localhost:5173"
+ set properties("CorsHeadersList")="Authorization,Origin,X-Requested-With,Content-Type,Accept,Cache-Control"
+ do ##class(Security.Applications).Modify("/terminology", .properties)
+ do ##class(Security.Applications).Modify("/terminology/fhir/r4", .properties)
+
+ // config %DB_%DEFAULT resource
+ set prop("PublicPermission")="READ"
+ write ##class(Security.Resources).Modify("%DB_%DEFAULT", .prop)
