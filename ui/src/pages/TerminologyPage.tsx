@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { TERMINOLOGIES } from "../config/demoConfig";
+import { IcdWorkspace } from "../workspaces/IcdWorkspace";
 import { LoincWorkspace } from "../workspaces/LoincWorkspace";
 import { SnomedWorkspace } from "../workspaces/SnomedWorkspace";
 
@@ -27,6 +28,10 @@ export function TerminologyPage() {
 
   if (terminology.id === "loinc") {
     return <LoincWorkspace />;
+  }
+
+  if (terminology.id === "icd") {
+    return <IcdWorkspace />;
   }
 
   return (
