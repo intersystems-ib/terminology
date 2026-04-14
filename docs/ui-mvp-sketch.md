@@ -21,6 +21,22 @@ The UI should be:
 The UI is a demo explorer, not an administration portal.
 Avoid user management, ingestion management and advanced configuration in the first version.
 
+## Current UI
+
+The current MVP UI is already implemented under `ui/`.
+
+Today it includes:
+
+- a login screen using Basic auth against the terminology server
+- a home screen with cards for `SNOMED CT`, `LOINC` and `ICD`
+- a dedicated workspace for each terminology
+- a `Native API | FHIR API` switch inside each workspace
+- operation, result and technical-view sections
+- collapsible workspace sections
+- live request execution against the implemented terminology endpoints
+
+The current UI is intended to be run with the Vite dev server during local development.
+
 ## Recommended Stack
 
 Recommended frontend stack:
@@ -186,6 +202,11 @@ Suggested storage approach for the MVP:
 - keep credentials in memory during the session
 - optionally allow session storage if needed for page refresh convenience
 
+Current implementation detail:
+
+- the UI currently stores the session in `sessionStorage`
+- the login validation request currently uses `GET /terminology/auth/login`
+
 ### Why Not Serve The UI From IRIS Immediately
 
 For the MVP, do not make UI hosting inside IRIS a requirement.
@@ -238,25 +259,25 @@ The UI flow should be:
 
 ### Suggested Verification URL
 
-Use a lightweight FHIR metadata request for login validation:
+Use a lightweight terminology auth request for login validation:
 
 ```text
-GET {serverUrl}/terminology/fhir/r4/metadata
+GET {serverUrl}/terminology/auth/login
 Authorization: Basic <base64(username:password)>
-Accept: application/fhir+json
+Accept: application/json
 ```
 
 Example:
 
 ```text
-GET http://localhost:52774/terminology/fhir/r4/metadata
+GET http://localhost:52774/terminology/auth/login
 ```
 
 This is a good login check because:
 
-- it is already part of the documented FHIR examples
 - it confirms the terminology server is reachable
 - it confirms the credentials are valid
+- it keeps the UI login flow separate from the FHIR metadata surface
 
 ### UI Route
 
