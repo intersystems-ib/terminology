@@ -224,8 +224,8 @@ export function LoincWorkspace() {
             </div>
           </div>
           <div className="workspace-meta">
-            <Link className="button button-secondary" to="/">
-              Back Home
+            <Link className="icon-button" to="/" aria-label="Back home" title="Back home">
+              <HomeIcon />
             </Link>
             <span className="pill">Release {formState.releaseId}</span>
             <span className="pill">FHIR + Native</span>
@@ -276,8 +276,10 @@ export function LoincWorkspace() {
               className="section-toggle-button"
               onClick={() => toggleSection("operation")}
               aria-expanded={!collapsedSections.operation}
+              aria-label={collapsedSections.operation ? "Expand operation" : "Collapse operation"}
+              title={collapsedSections.operation ? "Expand operation" : "Collapse operation"}
             >
-              {collapsedSections.operation ? "Expand" : "Collapse"}
+              {collapsedSections.operation ? <ExpandIcon /> : <CollapseIcon />}
             </button>
           </div>
           {!collapsedSections.operation ? (
@@ -324,8 +326,10 @@ export function LoincWorkspace() {
               className="section-toggle-button"
               onClick={() => toggleSection("result")}
               aria-expanded={!collapsedSections.result}
+              aria-label={collapsedSections.result ? "Expand result" : "Collapse result"}
+              title={collapsedSections.result ? "Expand result" : "Collapse result"}
             >
-              {collapsedSections.result ? "Expand" : "Collapse"}
+              {collapsedSections.result ? <ExpandIcon /> : <CollapseIcon />}
             </button>
           </div>
           {!collapsedSections.result ? (
@@ -354,8 +358,10 @@ export function LoincWorkspace() {
               className="section-toggle-button"
               onClick={() => toggleSection("technical")}
               aria-expanded={!collapsedSections.technical}
+              aria-label={collapsedSections.technical ? "Expand technical view" : "Collapse technical view"}
+              title={collapsedSections.technical ? "Expand technical view" : "Collapse technical view"}
             >
-              {collapsedSections.technical ? "Expand" : "Collapse"}
+              {collapsedSections.technical ? <ExpandIcon /> : <CollapseIcon />}
             </button>
           </div>
           {!collapsedSections.technical ? (
@@ -701,6 +707,51 @@ function TechnicalIcon() {
       <rect x="4" y="5" width="16" height="14" rx="4" fill="currentColor" opacity="0.12" />
       <path
         d="M10 9l-3 3 3 3M14 9l3 3-3 3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function HomeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="workspace-svg-icon">
+      <path
+        d="M4 11.5L12 5l8 6.5M7 10.5V19h10v-8.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CollapseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="workspace-svg-icon">
+      <path
+        d="M7 14l5-5 5 5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ExpandIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="workspace-svg-icon">
+      <path
+        d="M7 10l5 5 5-5"
         fill="none"
         stroke="currentColor"
         strokeWidth="2"
