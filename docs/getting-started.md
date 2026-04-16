@@ -238,13 +238,13 @@ Notes:
 Open an IRIS terminal in the container:
 
 ```bash
-docker exec -it iris iris session IRIS
+docker exec -it iris-terminology-server iris session IRIS
 ```
 
 If you change test files while the container is already running, copy the updated test tree into the container before rerunning `%UnitTest`:
 
 ```bash
-docker cp iris/tests/ iris:/opt/irisapp
+docker cp iris/tests/ iris-terminology-server:/opt/irisapp
 ```
 
 Switch to the terminology namespace and run a suite:
