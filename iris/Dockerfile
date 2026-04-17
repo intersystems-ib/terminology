@@ -1,4 +1,4 @@
-ARG IMAGE=containers.intersystems.com/intersystems/irishealth-community:2025.1
+ARG IMAGE=containers.intersystems.com/intersystems/irishealth-community:2026.1
 FROM $IMAGE
 
 USER root
@@ -11,6 +11,7 @@ USER ${ISC_PACKAGE_MGRUSER}
 COPY /iris/src src
 COPY /iris/tests tests
 COPY /iris/iris.script /tmp/iris.script
+COPY /iris/shared/sql/embedding-configuration.sql /tmp/embedding-configuration.sql
 
 COPY --chown=$ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISGROUP /iris/requirements.txt /
 RUN chmod 777 /requirements.txt
