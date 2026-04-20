@@ -10,8 +10,7 @@ INSERT INTO %Embedding.Config (Name, Configuration, EmbeddingClass, Description)
           'BioLord-2023-M model from Hugging Face, optimized for biomedical text.')
 GO
 CREATE TABLE IF NOT EXISTS Terminology_Vector.TermEmbedding (
-    TermId INT NOT NULL,
-    Terminology VARCHAR(100) NOT NULL,
+    ReleaseId VARCHAR(100) NOT NULL,
     Code VARCHAR(40) NOT NULL,
     Lang VARCHAR(10),
     Description VARCHAR(2000) NOT NULL,
