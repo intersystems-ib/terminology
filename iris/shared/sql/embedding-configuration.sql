@@ -10,6 +10,7 @@ INSERT INTO %Embedding.Config (Name, Configuration, EmbeddingClass, Description)
           'BioLord-2023-M model from Hugging Face, optimized for biomedical text.')
 GO
 CREATE TABLE IF NOT EXISTS Terminology_Vector.TermEmbedding (
+    CodeSystem VARCHAR(40) NOT NULL,
     ReleaseId VARCHAR(100) NOT NULL,
     Code VARCHAR(40) NOT NULL,
     Lang VARCHAR(10),
@@ -17,9 +18,9 @@ CREATE TABLE IF NOT EXISTS Terminology_Vector.TermEmbedding (
     DescriptionEmbedding EMBEDDING ('sentence-transformers-config', 'Description')
 )
 GO
-CREATE UNIQUE INDEX TermEmbedding_Unique ON TABLE Terminology_Vector.TermEmbedding (TermId, Terminology, Code, Lang)
+CREATE UNIQUE INDEX TermEmbedding_Unique ON TABLE Terminology_Vector.TermEmbedding (CodeSystem, ReleaseId, Code, Lang)
 GO
-CREATE INDEX TermEmbedding_Code ON TABLE Terminology_Vector.TermEmbedding (TermId, Terminology)
+CREATE INDEX TermEmbedding_Code ON TABLE Terminology_Vector.TermEmbedding (CodeSystem, ReleaseId, Code)
 GO
 CREATE INDEX HNSWIndexTerm ON TABLE Terminology_Vector.TermEmbedding (DescriptionEmbedding)
   AS HNSW(M=24, Distance='DotProduct')
