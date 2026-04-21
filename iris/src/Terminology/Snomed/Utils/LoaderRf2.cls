@@ -115,6 +115,7 @@ def ensure_code_system(system_uri):
     default_lang = "es"
     default_dialect = "es-ES"
     default_notes = "SNOMED CT code system"
+    default_type = "SNOMED"
 
     if exists_sql(
         "SELECT SystemUri FROM Terminology_Core.CodeSystem WHERE SystemUri = ?",
@@ -123,25 +124,27 @@ def ensure_code_system(system_uri):
     ):
         execute_non_query(
             "UPDATE Terminology_Core.CodeSystem "
-            "SET Name = ?, DefaultLang = ?, DefaultDialect = ?, Notes = ? "
+            "SET Name = ?, DefaultLang = ?, DefaultDialect = ?, Notes = ?, Type = ? "
             "WHERE SystemUri = ?",
             default_name,
             default_lang,
             default_dialect,
             default_notes,
+            default_type,
             system_uri,
             context="update_codesystem"
         )
     else:
         execute_non_query(
             "INSERT INTO Terminology_Core.CodeSystem "
-            "(SystemUri, Name, DefaultLang, DefaultDialect, Notes) "
-            "SELECT ?, ?, ?, ?, ?",
+            "(SystemUri, Name, DefaultLang, DefaultDialect, Notes, Type) "
+            "SELECT ?, ?, ?, ?, ?, ?",
             system_uri,
             default_name,
             default_lang,
             default_dialect,
             default_notes,
+            default_type,
             context="insert_codesystem"
         )
 

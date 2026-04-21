@@ -1,37 +1,201 @@
 Class Terminology.Vector.Utils Extends %RegisteredObject
 {
 
-ClassMethod RebuildBySource(pSource As %String, pReleaseId As %String = "", pLang As %String = "", pDialect As %String = "", pVersion As %String = "", pCodeType As %String = "") As %Status
-{
-    Quit ..RebuildBySourcePy(pSource, pReleaseId, pLang, pDialect, pVersion, pCodeType)
-}
-
-ClassMethod RebuildBySourcePy(pSource As %String, pReleaseId As %String = "", pLang As %String = "", pDialect As %String = "", pVersion As %String = "", pCodeType As %String = "") As %Status [ Language = python ]
+ClassMethod GetSystemUriByRelease(pReleaseId As %String) As %String [ Language = python ]
 {
     import iris
 
+    stmt = iris.sql.prepare(
+        "SELECT SystemUri "
+        "FROM Terminology_Core.VersionRelease "
+        "WHERE ReleaseId = ?"
+    )
+    rs = stmt.execute(pReleaseId)
+    df = rs.dataframe()
+
+    if df is None or df.empty:
+        raise Exception("SystemUri not found for ReleaseId: " + str(pReleaseId))
+
+    return str(df.iloc[0]["systemuri"])
+}
+
+ClassMethod RebuildByRelease(pReleaseId As %String, pType As %String, pLang As %String = "", pDialect As %String = "", pVersion As %String = "", pCodeType As %String = "", pModelName As %String = "FremyCompany/BioLORD-2023-M", pBatchSize As %Integer = 50) As %Status
+{
+    Quit ..RebuildByReleasePy(
+        pReleaseId,
+        pType,
+        pLang,
+        pDialect,
+        pVersion,
+        pCodeType,
+        pModelName,
+        pBatchSize
+    )
+}
+
+ClassMethod RebuildByReleasePy(pReleaseId As %String, pType As %String, pLang As %String = "", pDialect As %String = "", pVersion As %String = "", pCodeType As %String = "", pModelName As %String = "FremyCompany/BioLORD-2023-M", pBatchSize As %Integer = 50) As %Status [ Language = python ]
+{
+    import os
+    import json
+    import iris
+    import sentence_transformers
+
+    def normalize_type(value):
+        return (value or "").strip().upper()
+
+    def ensure_model(name):
+        model_dir = "/iris-shared/model/"
+        if not os.path.isdir(model_dir):
+            model = sentence_transformers.SentenceTransformer(name)
+            model.save(model_dir)
+        return sentence_transformers.SentenceTransformer(model_dir)
+
+    def execute_non_query(sql, params, context=""):
+        params_json = json.dumps(list(params), ensure_ascii=False)
+        sc = iris.cls("Terminology.Core.SqlUtils").ExecuteNonQuery(sql, params_json)
+        if not iris.system.Status.IsOK(sc):
+            try:
+                iris.cls("Terminology.Core.SqlUtils").LogStatus(
+                    "ExecuteNonQuery [" + context + "]",
+                    sc
+                )
+            except Exception:
+                pass
+            raise Exception("ExecuteNonQuery failed in " + context)
+
+    def build_select(type_name, release_id, lang, dialect, version, code_type):
+        t = normalize_type(type_name)
+
+        if t == "SNOMED":
+            sql = (
+                "SELECT ReleaseId, ConceptId AS Code, Lang, Term AS Text "
+                "FROM Terminology_Snomed.PreferredTerm "
+                "WHERE ReleaseId = ?"
+            )
+            params = [release_id]
+
+            if lang != "":
+                sql += " AND Lang = ?"
+                params.append(lang)
+
+            if dialect != "":
+                sql += " AND Dialect = ?"
+                params.append(dialect)
+
+            return sql, params
+
+        if t == "LOINC":
+            sql = (
+                "SELECT ReleaseId, LoincNum AS Code, Lang, Display AS Text "
+                "FROM Terminology_Loinc.Display "
+                "WHERE ReleaseId = ?"
+            )
+            params = [release_id]
+
+            if lang != "":
+                sql += " AND Lang = ?"
+                params.append(lang)
+
+            return sql, params
+
+        if t == "ICD":
+            sql = (
+                "SELECT ReleaseId, Code, '' AS Lang, Description AS Text "
+                "FROM Terminology_ICD.Code "
+                "WHERE ReleaseId = ?"
+            )
+            params = [release_id]
+
+            if version != "":
+                sql += " AND Version = ?"
+                params.append(version)
+
+            if code_type != "":
+                sql += " AND CodeType = ?"
+                params.append(code_type)
+
+            return sql, params
+
+        raise Exception("Unsupported terminology type: " + str(type_name))
+
+    def insert_batch(rows):
+        if not rows:
+            return
+
+        selects = []
+        params = []
+
+        for i, row in enumerate(rows):
+            prefix = "SELECT" if i == 0 else "UNION ALL SELECT"
+            selects.append(prefix + " ?,?,?,?,?,?,TO_VECTOR(?,DECIMAL)")
+            params.extend([
+                row["SystemUri"],
+                row["ReleaseId"],
+                row["Code"],
+                row["Lang"],
+                row["Text"],
+                row["Model"],
+                row["Embedding"]
+            ])
+
+        sql = (
+            "INSERT INTO Terminology_Vector.TermEmbedding "
+            "(SystemUri, ReleaseId, Code, Lang, Text, Model, Embedding) "
+            + " ".join(selects)
+        )
+
+        execute_non_query(sql, params, "InsertBatch")
+
     try:
-        source = (str(pSource).strip().upper() if pSource is not None else "")
+        tSC = iris.cls("Terminology.Vector.Utils").ClearByRelease(pReleaseId)
+        if not iris.system.Status.IsOK(tSC):
+            return tSC
 
-        if source == "SNOMED":
-            tSC = iris.cls("Terminology.Vector.Utils").ClearBySource("SNOMED", pReleaseId)
-            if not iris.system.Status.IsOK(tSC):
-                return tSC
-            return iris.cls("Terminology.Vector.Utils").LoadSnomed(pReleaseId, pLang, pDialect)
+        system_uri = iris.cls("Terminology.Vector.Utils").GetSystemUriByRelease(pReleaseId)
 
-        if source == "LOINC":
-            tSC = iris.cls("Terminology.Vector.Utils").ClearBySource("LOINC", pReleaseId)
-            if not iris.system.Status.IsOK(tSC):
-                return tSC
-            return iris.cls("Terminology.Vector.Utils").LoadLoinc(pReleaseId, pLang)
+        sql, params = build_select(
+            pType,
+            pReleaseId,
+            pLang,
+            pDialect,
+            pVersion,
+            pCodeType
+        )
 
-        if (source == "ICD") or (source == "CIE"):
-            tSC = iris.cls("Terminology.Vector.Utils").ClearBySource("ICD", pReleaseId)
-            if not iris.system.Status.IsOK(tSC):
-                return tSC
-            return iris.cls("Terminology.Vector.Utils").LoadICD(pReleaseId, pVersion, pCodeType)
+        stmt = iris.sql.prepare(sql)
+        rs = stmt.execute(*params)
+        df = rs.dataframe()
 
-        return iris.system.Status.Error(5001, "Unsupported source: " + str(pSource))
+        if df is None or df.empty:
+            return iris.system.Status.OK()
+
+        df = df.fillna("")
+        model = ensure_model(str(pModelName))
+        batch_size = int(pBatchSize) if int(pBatchSize) > 0 else 50
+
+        total = len(df)
+
+        for start in range(0, total, batch_size):
+            chunk = df.iloc[start:start + batch_size].copy()
+            texts = chunk["text"].astype(str).tolist()
+            embeddings = model.encode(texts, normalize_embeddings=True)
+            chunk["embedding"] = embeddings.tolist()
+
+            rows = []
+            for _, row in chunk.iterrows():
+                rows.append({
+                    "SystemUri": str(system_uri),
+                    "ReleaseId": str(row["releaseid"]),
+                    "Code": str(row["code"]),
+                    "Lang": str(row["lang"]),
+                    "Text": str(row["text"]),
+                    "Model": str(pModelName),
+                    "Embedding": str(row["embedding"])
+                })
+
+            insert_batch(rows)
+
+        return iris.system.Status.OK()
 
     except Exception as err:
         return iris.system.Status.Error(5001, str(err))
@@ -44,254 +208,34 @@ ClassMethod ClearAll() As %Status
     Quit ##class(Terminology.Core.SqlUtils).ExecuteNonQuery(sql, params)
 }
 
-ClassMethod ClearBySource(pSource As %String, pReleaseId As %String = "") As %Status
+ClassMethod ClearByRelease(pReleaseId As %String) As %Status [ Language = python ]
 {
-    Set source = $ZCONVERT($ZSTRIP($Get(pSource),"<>W"),"U")
-
-    If pReleaseId'="" {
-        Set sql = "DELETE FROM Terminology_Vector.TermEmbedding WHERE CodeSystem = ? AND ReleaseId = ?"
-        Set params = "[ """_$Replace(source,"""","\""")_""", """_$Replace($Get(pReleaseId),"""","\""")_""" ]"
-        Quit ##class(Terminology.Core.SqlUtils).ExecuteNonQuery(sql, params)
-    }
-
-    Set sql = "DELETE FROM Terminology_Vector.TermEmbedding WHERE CodeSystem = ?"
-    Set params = "[ """_$Replace(source,"""","\""")_""" ]"
-    Quit ##class(Terminology.Core.SqlUtils).ExecuteNonQuery(sql, params)
-}
-
-ClassMethod LoadSnomed(pReleaseId As %String = "", pLang As %String = "", pDialect As %String = "") As %Status
-{
-    Quit ..LoadSnomedPy(pReleaseId, pLang, pDialect)
-}
-
-ClassMethod LoadSnomedPy(pReleaseId As %String = "", pLang As %String = "", pDialect As %String = "") As %Status [ Language = python ]
-{
-    import iris
     import json
-
-    def execute_non_query(sql, params, context=""):
-        params_json = json.dumps(list(params), ensure_ascii=False)
-        sc = iris.cls("Terminology.Core.SqlUtils").ExecuteNonQuery(sql, params_json)
-        if not iris.system.Status.IsOK(sc):
-            try:
-                iris.cls("Terminology.Core.SqlUtils").LogStatus(
-                    "ExecuteNonQuery [" + context + "]",
-                    sc
-                )
-            except Exception:
-                pass
-            raise Exception("ExecuteNonQuery failed in " + context)
+    import iris
 
     try:
-        sql = (
-            "SELECT %ID AS TermId, ReleaseId, ConceptId AS Code, Lang, Dialect, Term AS Description "
-            "FROM Terminology_Snomed.PreferredTerm WHERE 1=1"
+        system_uri = iris.cls("Terminology.Vector.Utils").GetSystemUriByRelease(pReleaseId)
+
+        params_json = json.dumps([system_uri, pReleaseId], ensure_ascii=False)
+        sc = iris.cls("Terminology.Core.SqlUtils").ExecuteNonQuery(
+            "DELETE FROM Terminology_Vector.TermEmbedding WHERE SystemUri = ? AND ReleaseId = ?",
+            params_json
         )
-        params = []
-
-        if pReleaseId != "":
-            sql = sql + " AND ReleaseId = ?"
-            params.append(pReleaseId)
-
-        if pLang != "":
-            sql = sql + " AND Lang = ?"
-            params.append(pLang)
-
-        if pDialect != "":
-            sql = sql + " AND Dialect = ?"
-            params.append(pDialect)
-
-        stmt = iris.sql.prepare(sql)
-        rs = stmt.execute(*params)
-        df = rs.dataframe()
-
-        if df is None or df.empty:
-            return iris.system.Status.OK()
-
-        df = df.fillna("")
-
-        insert_sql = (
-            "INSERT INTO Terminology_Vector.TermEmbedding "
-            "(CodeSystem, ReleaseId, Code, Lang, Description) "
-            "VALUES (?,?,?,?,?)"
-        )
-
-        for _, row in df.iterrows():
-            execute_non_query(
-                insert_sql,
-                [
-                    "SNOMED",
-                    str(row["releaseid"]),
-                    str(row["code"]),
-                    str(row["lang"]),
-                    str(row["description"])
-                ],
-                "InsertSnomed"
-            )
-
-        return iris.system.Status.OK()
-
+        return sc
     except Exception as err:
         return iris.system.Status.Error(5001, str(err))
 }
 
-ClassMethod LoadLoinc(pReleaseId As %String = "", pLang As %String = "") As %Status
-{
-    Quit ..LoadLoincPy(pReleaseId, pLang)
-}
-
-ClassMethod LoadLoincPy(pReleaseId As %String = "", pLang As %String = "") As %Status [ Language = python ]
-{
-    import iris
-    import json
-
-    def execute_non_query(sql, params, context=""):
-        params_json = json.dumps(list(params), ensure_ascii=False)
-        sc = iris.cls("Terminology.Core.SqlUtils").ExecuteNonQuery(sql, params_json)
-        if not iris.system.Status.IsOK(sc):
-            try:
-                iris.cls("Terminology.Core.SqlUtils").LogStatus(
-                    "ExecuteNonQuery [" + context + "]",
-                    sc
-                )
-            except Exception:
-                pass
-            raise Exception("ExecuteNonQuery failed in " + context)
-
-    try:
-        sql = (
-            "SELECT %ID AS TermId, ReleaseId, LoincNum AS Code, Lang, Display AS Description "
-            "FROM Terminology_Loinc.Display WHERE 1=1"
-        )
-        params = []
-
-        if pReleaseId != "":
-            sql = sql + " AND ReleaseId = ?"
-            params.append(pReleaseId)
-
-        if pLang != "":
-            sql = sql + " AND Lang = ?"
-            params.append(pLang)
-
-        stmt = iris.sql.prepare(sql)
-        rs = stmt.execute(*params)
-        df = rs.dataframe()
-
-        if df is None or df.empty:
-            return iris.system.Status.OK()
-
-        df = df.fillna("")
-
-        insert_sql = (
-            "INSERT INTO Terminology_Vector.TermEmbedding "
-            "(CodeSystem, ReleaseId, Code, Lang, Description) "
-            "VALUES (?,?,?,?,?)"
-        )
-
-        for _, row in df.iterrows():
-            execute_non_query(
-                insert_sql,
-                [
-                    "LOINC",
-                    str(row["releaseid"]),
-                    str(row["code"]),
-                    str(row["lang"]),
-                    str(row["description"])
-                ],
-                "InsertLoinc"
-            )
-
-        return iris.system.Status.OK()
-
-    except Exception as err:
-        return iris.system.Status.Error(5001, str(err))
-}
-
-ClassMethod LoadICD(pReleaseId As %String = "", pVersion As %String = "", pCodeType As %String = "") As %Status
-{
-    Quit ..LoadICDPy(pReleaseId, pVersion, pCodeType)
-}
-
-ClassMethod LoadICDPy(pReleaseId As %String = "", pVersion As %String = "", pCodeType As %String = "") As %Status [ Language = python ]
-{
-    import iris
-    import json
-
-    def execute_non_query(sql, params, context=""):
-        params_json = json.dumps(list(params), ensure_ascii=False)
-        sc = iris.cls("Terminology.Core.SqlUtils").ExecuteNonQuery(sql, params_json)
-        if not iris.system.Status.IsOK(sc):
-            try:
-                iris.cls("Terminology.Core.SqlUtils").LogStatus(
-                    "ExecuteNonQuery [" + context + "]",
-                    sc
-                )
-            except Exception:
-                pass
-            raise Exception("ExecuteNonQuery failed in " + context)
-
-    try:
-        sql = (
-            "SELECT %ID AS TermId, ReleaseId, Code, '' AS Lang, Description "
-            "FROM Terminology_ICD.Code WHERE 1=1"
-        )
-        params = []
-
-        if pReleaseId != "":
-            sql = sql + " AND ReleaseId = ?"
-            params.append(pReleaseId)
-
-        if pVersion != "":
-            sql = sql + " AND Version = ?"
-            params.append(pVersion)
-
-        if pCodeType != "":
-            sql = sql + " AND CodeType = ?"
-            params.append(pCodeType)
-
-        stmt = iris.sql.prepare(sql)
-        rs = stmt.execute(*params)
-        df = rs.dataframe()
-
-        if df is None or df.empty:
-            return iris.system.Status.OK()
-
-        df = df.fillna("")
-
-        insert_sql = (
-            "INSERT INTO Terminology_Vector.TermEmbedding "
-            "(CodeSystem, ReleaseId, Code, Lang, Description) "
-            "VALUES (?,?,?,?,?)"
-        )
-
-        for _, row in df.iterrows():
-            execute_non_query(
-                insert_sql,
-                [
-                    "ICD",
-                    str(row["releaseid"]),
-                    str(row["code"]),
-                    "",
-                    str(row["description"])
-                ],
-                "InsertICD"
-            )
-
-        return iris.system.Status.OK()
-
-    except Exception as err:
-        return iris.system.Status.Error(5001, str(err))
-}
-
-ClassMethod SearchSimilar(pText As %String, pCodeSystem As %String = "", pReleaseId As %String = "", pLang As %String = "", pTop As %Integer = 10) As %DynamicArray
+ClassMethod SearchSimilar(pText As %String, pSystemUri As %String = "", pReleaseId As %String = "", pLang As %String = "", pTop As %Integer = 10, pModelName As %String = "FremyCompany/BioLORD-2023-M") As %DynamicArray
 {
     Set result = []
     Try {
-        Set sql = "SELECT TOP ? CodeSystem, ReleaseId, Code, Lang, Description "_
+        Set stmt = ##class(%SQL.Statement).%New()
+        Set sql = "SELECT TOP ? SystemUri, ReleaseId, Code, Lang, Text, Model "_
                   "FROM Terminology_Vector.TermEmbedding WHERE 1=1 "
 
-        If pCodeSystem'="" {
-            Set sql = sql_"AND CodeSystem = ? "
+        If pSystemUri'="" {
+            Set sql = sql_"AND SystemUri = ? "
         }
 
         If pReleaseId'="" {
@@ -302,41 +246,57 @@ ClassMethod SearchSimilar(pText As %String, pCodeSystem As %String = "", pReleas
             Set sql = sql_"AND Lang = ? "
         }
 
-        Set sql = sql_"ORDER BY VECTOR_DOT_PRODUCT(DescriptionEmbedding, EMBEDDING(?,'sentence-transformers-config')) DESC"
-
-        Set stmt = ##class(%SQL.Statement).%New()
+        Set sql = sql_"ORDER BY VECTOR_DOT_PRODUCT(Embedding, TO_VECTOR(?,DECIMAL)) DESC"
         $$$ThrowOnError(stmt.%Prepare(sql))
 
-        If (pCodeSystem'="")&&(pReleaseId'="")&&(pLang'="") {
-            Set rs = stmt.%Execute(pTop, pCodeSystem, pReleaseId, pLang, pText)
-        } ElseIf (pCodeSystem'="")&&(pReleaseId'="") {
-            Set rs = stmt.%Execute(pTop, pCodeSystem, pReleaseId, pText)
-        } ElseIf (pCodeSystem'="")&&(pLang'="") {
-            Set rs = stmt.%Execute(pTop, pCodeSystem, pLang, pText)
+        Set vector = ..EncodeText(pText, pModelName)
+
+        If (pSystemUri'="")&&(pReleaseId'="")&&(pLang'="") {
+            Set rs = stmt.%Execute(pTop, pSystemUri, pReleaseId, pLang, vector)
+        } ElseIf (pSystemUri'="")&&(pReleaseId'="") {
+            Set rs = stmt.%Execute(pTop, pSystemUri, pReleaseId, vector)
+        } ElseIf (pSystemUri'="")&&(pLang'="") {
+            Set rs = stmt.%Execute(pTop, pSystemUri, pLang, vector)
         } ElseIf (pReleaseId'="")&&(pLang'="") {
-            Set rs = stmt.%Execute(pTop, pReleaseId, pLang, pText)
-        } ElseIf (pCodeSystem'="") {
-            Set rs = stmt.%Execute(pTop, pCodeSystem, pText)
+            Set rs = stmt.%Execute(pTop, pReleaseId, pLang, vector)
+        } ElseIf (pSystemUri'="") {
+            Set rs = stmt.%Execute(pTop, pSystemUri, vector)
         } ElseIf (pReleaseId'="") {
-            Set rs = stmt.%Execute(pTop, pReleaseId, pText)
+            Set rs = stmt.%Execute(pTop, pReleaseId, vector)
         } ElseIf (pLang'="") {
-            Set rs = stmt.%Execute(pTop, pLang, pText)
+            Set rs = stmt.%Execute(pTop, pLang, vector)
         } Else {
-            Set rs = stmt.%Execute(pTop, pText)
+            Set rs = stmt.%Execute(pTop, vector)
         }
 
         While rs.%Next() {
             Set item = {}
-            Set item.codeSystem = rs.%Get("CodeSystem")
+            Set item.systemUri = rs.%Get("SystemUri")
             Set item.releaseId = rs.%Get("ReleaseId")
             Set item.code = rs.%Get("Code")
             Set item.lang = rs.%Get("Lang")
-            Set item.description = rs.%Get("Description")
+            Set item.text = rs.%Get("Text")
+            Set item.model = rs.%Get("Model")
             Do result.%Push(item)
         }
     } Catch ex {
     }
     Quit result
+}
+
+ClassMethod EncodeText(pText As %String, pModelName As %String = "FremyCompany/BioLORD-2023-M") As %String [ Language = python ]
+{
+    import os
+    import sentence_transformers
+
+    model_dir = "/iris-shared/model/"
+    if not os.path.isdir(model_dir):
+        model = sentence_transformers.SentenceTransformer(str(pModelName))
+        model.save(model_dir)
+
+    model = sentence_transformers.SentenceTransformer(model_dir)
+    embedding = model.encode([str(pText)], normalize_embeddings=True)[0]
+    return str(embedding.tolist())
 }
 
 }

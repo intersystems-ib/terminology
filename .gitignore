@@ -1,5 +1,6 @@
 iris/shared/durable
 iris/shared/tmp
 iris/shared/resources/*.zip
+iris/shared/model
 ui/node_modules
 ui/dist

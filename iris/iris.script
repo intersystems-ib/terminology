@@ -9,7 +9,7 @@ ROUTINE iris
  do ##class(HS.Util.Installer.Foundation).Install("TERMINOLOGY")
  zn "TERMINOLOGY"
 
- do ##class(%SYSTEM.SQL.Schema).ImportDDL("/tmp/embedding-configuration.sql")
+ // do ##class(%SYSTEM.SQL.Schema).ImportDDL("/tmp/embedding-configuration.sql")
  // load source code
  set sc = $SYSTEM.OBJ.Import("/opt/irisapp/src/Terminology", "ck")
  set ^UnitTestRoot = "/opt/irisapp/tests"

@@ -120,6 +120,7 @@ def ensure_code_system(system_uri):
     default_lang = "es"
     default_dialect = ""
     default_notes = "LOINC code system"
+    default_type = "LOINC"
 
     if exists_sql(
         "SELECT SystemUri FROM Terminology_Core.CodeSystem WHERE SystemUri = ?",
@@ -140,13 +141,14 @@ def ensure_code_system(system_uri):
     else:
         execute_non_query(
             "INSERT INTO Terminology_Core.CodeSystem "
-            "(SystemUri, Name, DefaultLang, DefaultDialect, Notes) "
-            "SELECT ?, ?, ?, ?, ?",
+            "(SystemUri, Name, DefaultLang, DefaultDialect, Notes, Type) "
+            "SELECT ?, ?, ?, ?, ?, ?",
             system_uri,
             default_name,
             default_lang,
             default_dialect,
             default_notes,
+            default_type,
             context="insert_codesystem"
         )
 
