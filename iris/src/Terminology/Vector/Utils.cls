@@ -21,7 +21,7 @@ ClassMethod GetSystemUriByRelease(pReleaseId As %String) As %String [ Language =
 
 ClassMethod RebuildByRelease(pReleaseId As %String, pType As %String, pLang As %String = "", pDialect As %String = "", pVersion As %String = "", pCodeType As %String = "", pModelName As %String = "FremyCompany/BioLORD-2023-M", pBatchSize As %Integer = 50) As %Status
 {
-    Quit ..RebuildByReleasePy(
+    return ..RebuildByReleasePy(
         pReleaseId,
         pType,
         pLang,
@@ -205,7 +205,7 @@ ClassMethod ClearAll() As %Status
 {
     Set sql = "DELETE FROM Terminology_Vector.TermEmbedding"
     Set params = "[]"
-    Quit ##class(Terminology.Core.SqlUtils).ExecuteNonQuery(sql, params)
+    return ##class(Terminology.Core.SqlUtils).ExecuteNonQuery(sql, params)
 }
 
 ClassMethod ClearByRelease(pReleaseId As %String) As %Status [ Language = python ]
@@ -281,7 +281,7 @@ ClassMethod SearchSimilar(pText As %String, pSystemUri As %String = "", pRelease
         }
     } Catch ex {
     }
-    Quit result
+    return result
 }
 
 ClassMethod EncodeText(pText As %String, pModelName As %String = "FremyCompany/BioLORD-2023-M") As %String [ Language = python ]
@@ -297,6 +297,207 @@ ClassMethod EncodeText(pText As %String, pModelName As %String = "FremyCompany/B
     model = sentence_transformers.SentenceTransformer(model_dir)
     embedding = model.encode([str(pText)], normalize_embeddings=True)[0]
     return str(embedding.tolist())
+}
+
+ClassMethod SearchSimilarMulti(pText As %String, pSystemUris As %DynamicArray = "", pReleaseIds As %DynamicArray = "", pLang As %String = "", pTop As %Integer = 10, pModelName As %String = "FremyCompany/BioLORD-2023-M") As %DynamicArray
+{
+    Set result = []
+
+    Try {
+        If $ZSTRIP($Get(pText),"<>W")="" {
+            return result
+        }
+
+        Set top = $Select(pTop>0:pTop,1:10)
+        Set vector = ..EncodeText(pText, pModelName)
+
+        Set sql = "SELECT TOP ? "_
+                  "SystemUri, ReleaseId, Code, Lang, Text, Model, "_
+                  "VECTOR_DOT_PRODUCT(Embedding, TO_VECTOR(?,DECIMAL)) AS Score "_
+                  "FROM Terminology_Vector.TermEmbedding "_
+                  "WHERE 1=1 "
+
+        Set tArgs($I(tArgs)) = top
+        Set tArgs($I(tArgs)) = vector
+
+        If $IsObject(pSystemUris), (pSystemUris.%Size()>0) {
+            Set sql = sql_"AND SystemUri IN ("_..BuildPlaceholders(pSystemUris.%Size())_") "
+            Do ..AppendDynamicArrayArgs(.tArgs, pSystemUris)
+        }
+
+        If $IsObject(pReleaseIds), (pReleaseIds.%Size()>0) {
+            Set sql = sql_"AND ReleaseId IN ("_..BuildPlaceholders(pReleaseIds.%Size())_") "
+            Do ..AppendDynamicArrayArgs(.tArgs, pReleaseIds)
+        }
+
+        If pLang'="" {
+            Set sql = sql_"AND Lang = ? "
+            Set tArgs($I(tArgs)) = pLang
+        }
+
+        Set sql = sql_"ORDER BY Score DESC"
+
+        Set stmt = ##class(%SQL.Statement).%New()
+        $$$ThrowOnError(stmt.%Prepare(sql))
+        Set rs = stmt.%Execute(tArgs...)
+
+        While rs.%Next() {
+            Set item = {}
+            Set item.systemUri = rs.%Get("SystemUri")
+            Set item.releaseId = rs.%Get("ReleaseId")
+            Set item.code = rs.%Get("Code")
+            Set item.lang = rs.%Get("Lang")
+            Set item.text = rs.%Get("Text")
+            Set item.model = rs.%Get("Model")
+            Set item.score = rs.%Get("Score")
+            Do result.%Push(item)
+        }
+    } Catch ex {
+    }
+
+    return result
+}
+
+ClassMethod CrosswalkSimilar(pText As %String = "", pSourceSystemUri As %String = "", pSourceCode As %String = "", pSourceReleaseId As %String = "", pTargetSystemUris As %DynamicArray = "", pTargetReleaseIds As %DynamicArray = "", pLang As %String = "", pTop As %Integer = 10, pModelName As %String = "FremyCompany/BioLORD-2023-M") As %DynamicArray
+{
+    Set result = []
+
+    Try {
+        Set searchText = $ZSTRIP($Get(pText),"<>W")
+
+        If (searchText="") && (pSourceCode'="") {
+            Set searchText = ..GetTextByIdentity(pSourceSystemUri, pSourceReleaseId, pSourceCode, pLang)
+        }
+
+        If searchText="" {
+            return result
+        }
+
+        Set top = $Select(pTop>0:pTop,1:10)
+        Set vector = ..EncodeText(searchText, pModelName)
+
+        Set sql = "SELECT TOP ? "_
+                  "SystemUri, ReleaseId, Code, Lang, Text, Model, "_
+                  "VECTOR_DOT_PRODUCT(Embedding, TO_VECTOR(?,DECIMAL)) AS Score "_
+                  "FROM Terminology_Vector.TermEmbedding "_
+                  "WHERE 1=1 "
+
+        Set tArgs($I(tArgs)) = top
+        Set tArgs($I(tArgs)) = vector
+
+        If $IsObject(pTargetSystemUris), (pTargetSystemUris.%Size()>0) {
+            Set sql = sql_"AND SystemUri IN ("_..BuildPlaceholders(pTargetSystemUris.%Size())_") "
+            Do ..AppendDynamicArrayArgs(.tArgs, pTargetSystemUris)
+        } ElseIf pSourceSystemUri'="" {
+            Set sql = sql_"AND SystemUri <> ? "
+            Set tArgs($I(tArgs)) = pSourceSystemUri
+        }
+
+        If $IsObject(pTargetReleaseIds), (pTargetReleaseIds.%Size()>0) {
+            Set sql = sql_"AND ReleaseId IN ("_..BuildPlaceholders(pTargetReleaseIds.%Size())_") "
+            Do ..AppendDynamicArrayArgs(.tArgs, pTargetReleaseIds)
+        }
+
+        If pLang'="" {
+            Set sql = sql_"AND Lang = ? "
+            Set tArgs($I(tArgs)) = pLang
+        }
+
+        If (pSourceSystemUri'="") && (pSourceCode'="") {
+            If pSourceReleaseId'="" {
+                Set sql = sql_"AND NOT (SystemUri = ? AND ReleaseId = ? AND Code = ?) "
+                Set tArgs($I(tArgs)) = pSourceSystemUri
+                Set tArgs($I(tArgs)) = pSourceReleaseId
+                Set tArgs($I(tArgs)) = pSourceCode
+            } Else {
+                Set sql = sql_"AND NOT (SystemUri = ? AND Code = ?) "
+                Set tArgs($I(tArgs)) = pSourceSystemUri
+                Set tArgs($I(tArgs)) = pSourceCode
+            }
+        }
+
+        Set sql = sql_"ORDER BY Score DESC"
+
+        Set stmt = ##class(%SQL.Statement).%New()
+        $$$ThrowOnError(stmt.%Prepare(sql))
+        Set rs = stmt.%Execute(tArgs...)
+
+        While rs.%Next() {
+            Set item = {}
+            Set item.sourceText = searchText
+            Set item.systemUri = rs.%Get("SystemUri")
+            Set item.releaseId = rs.%Get("ReleaseId")
+            Set item.code = rs.%Get("Code")
+            Set item.lang = rs.%Get("Lang")
+            Set item.text = rs.%Get("Text")
+            Set item.model = rs.%Get("Model")
+            Set item.score = rs.%Get("Score")
+            Do result.%Push(item)
+        }
+    } Catch ex {
+    }
+
+    return result
+}
+
+ClassMethod GetTextByIdentity(pSystemUri As %String, pReleaseId As %String, pCode As %String, pLang As %String = "") As %String
+{
+    Set text = ""
+
+    Try {
+        Set sql = "SELECT TOP 1 Text "_
+                  "FROM Terminology_Vector.TermEmbedding "_
+                  "WHERE SystemUri = ? AND ReleaseId = ? AND Code = ? "
+
+        Set tArgs($I(tArgs)) = pSystemUri
+        Set tArgs($I(tArgs)) = pReleaseId
+        Set tArgs($I(tArgs)) = pCode
+
+        If pLang'="" {
+            Set sql = sql_"AND Lang = ? "
+            Set tArgs($I(tArgs)) = pLang
+        }
+
+        Set sql = sql_"ORDER BY Text"
+
+        Set stmt = ##class(%SQL.Statement).%New()
+        $$$ThrowOnError(stmt.%Prepare(sql))
+        Set rs = stmt.%Execute(tArgs...)
+
+        If rs.%Next() {
+            Set text = rs.%Get("Text")
+        }
+    } Catch ex {
+    }
+
+    return text
+}
+
+ClassMethod BuildPlaceholders(pCount As %Integer) As %String [ Private ]
+{
+    Set placeholders = ""
+
+    For i=1:1:pCount {
+        If i>1 {
+            Set placeholders = placeholders_","
+        }
+        Set placeholders = placeholders_"?"
+    }
+
+    return placeholders
+}
+
+ClassMethod AppendDynamicArrayArgs(ByRef pArgs, pArray As %DynamicArray) As %Status [ Private ]
+{
+    If '$IsObject(pArray) {
+        return $$$OK
+    }
+
+    For i=0:1:(pArray.%Size()-1) {
+        Set pArgs($I(pArgs)) = pArray.%Get(i)
+    }
+
+    return $$$OK
 }
 
 }

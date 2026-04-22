@@ -18,17 +18,13 @@ Method OnRequest(pRequest As Terminology.Production.Msg.ICDLoadRequest, Output p
         Set tSC = ##class(Terminology.ICD.Utils.BuilderHierarchy).Build(pRequest.ReleaseId, pRequest.Version, pRequest.CodeType)
         If $$$ISERR(tSC) Return tSC
 
+        Set tSC = ..EnsureCoreMetadata(pRequest.ReleaseId, pRequest.Version, pRequest.Lang)
+        If $$$ISERR(tSC) Return tSC
+
         If ..GenerateVectors {
-             Set tSC = ##class(Terminology.Vector.Utils).RebuildByRelease(pRequest.ReleaseId, "ICD", pRequest.Lang, ,pRequest.Version, pRequest.CodeType)
-             If $$$ISERR(tSC) Return tSC
+            Set tSC = ##class(Terminology.Vector.Utils).RebuildByRelease(pRequest.ReleaseId, "ICD", pRequest.Lang, ,pRequest.Version, pRequest.CodeType)
+            If $$$ISERR(tSC) Return tSC
         }
-
-        Set tSC = ..EnsureCoreMetadata(pRequest.ReleaseId, pRequest.Version, pRequest.Lang)
-        If $$$ISERR(tSC) Return tSC
-
-        Set tSC = ..EnsureCoreMetadata(pRequest.ReleaseId, pRequest.Version, pRequest.Lang)
-        If $$$ISERR(tSC) Return tSC
-
         $$$LOGINFO("ICDLoad end")
         Return $$$OK
     } Catch ex {
