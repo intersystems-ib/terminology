@@ -418,6 +418,127 @@ Within each area, keep responsibilities separated by:
 - load
 - build
 
+## Vectorization Layer
+
+The terminology server includes a semantic vectorization layer to enable:
+
+  * free-text semantic search across terminologies
+  * semantic crosswalk between different code systems
+
+### Architecture Overview
+
+The vectorization layer follows the same interoperability pattern:
+
+REST API (/terminology/vector)
+|
+v
+VectorGatewayService (Business Service)
+|
+v
+VectorSearchOperation (Business Operation)
+|
+v
+Terminology.Vector.Utils
+|
+v
+Terminology_Vector.TermEmbedding
+
+### Data Model
+
+The vector store is implemented in:
+
+Terminology_Vector.TermEmbedding
+
+
+Main fields:
+
+  * `SystemUri` → canonical identifier of the terminology
+  * `ReleaseId` → specific release/version of the terminology
+  * `Code` → terminology code
+  * `Lang` → language
+  * `Text` → textual representation used for embedding
+  * `Model` → embedding model used
+  * `Embedding` → vector representation (HNSW indexed)
+
+### Vectorization Strategy
+
+Unlike IRIS automatic embedding (`EMBEDDING(...)`), vectors are generated explicitly:
+
+  * using `sentence-transformers` in embedded Python
+  * batched processing (default batch size = 50)
+  * stored using `TO_VECTOR(..., DECIMAL)`
+  * indexed with HNSW for fast similarity search
+
+### Source Data
+
+Vectors are generated from:
+
+  * SNOMED → `Terminology_Snomed.PreferredTerm`
+  * LOINC → `Terminology_Loinc.Display`
+  * ICD/CIE → `Terminology_ICD.Code`
+
+The source is determined by:
+
+  * `ReleaseId`
+  * `CodeSystem.Type` (SNOMED, LOINC, ICD)
+
+### Semantic Search
+
+Free-text queries are vectorized and matched against stored embeddings:
+
+VECTOR_DOT_PRODUCT(Embedding, query_vector)
+
+
+Filtering is supported by:
+
+  * one or multiple `SystemUri`
+  * one or multiple `ReleaseId`
+  * `Lang`
+
+### Crosswalk (Semantic Mapping)
+
+Cross-terminology mapping is achieved by:
+
+  * vectorizing a source concept (text or code)
+  * searching in target terminologies
+  * ranking results by similarity score
+
+This provides:
+
+  * approximate equivalence suggestions
+  * multi-terminology exploration
+  * language-independent matching
+
+Note: This is **not a formal mapping**, but a semantic similarity mechanism.
+
+### Key Components
+
+  * `Terminology.Vector.Utils`
+      * vector generation
+      * batch insertion
+      * semantic search
+      * crosswalk logic
+
+  * `VectorGatewayService`
+      * entry point from REST
+
+  * `VectorSearchOperation`
+      * orchestration and delegation to Utils
+
+### Design Considerations
+
+  * decouples vectorization from ingestion
+  * avoids runtime embedding computation
+  * supports multiple releases per terminology
+  * allows future replacement of embedding models
+
+### Future Extensions
+
+  * FHIR `$translate` backed by vector similarity
+  * hybrid search (text + vector)
+  * score threshold filtering
+  * precomputed crosswalk caches
+
 ## Non-Goals For The Current Stage
 
 Not required in the current stage:

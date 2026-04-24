@@ -181,3 +181,100 @@ The aim of this repository is to help developers and partners answer questions l
 Future exploration may include additional search and discovery patterns on IRIS, including possible use of vector database features for selected terminology-server functions where they add real value.
 
 The documentation is split into onboarding, architecture, scope and conventions so the repository can support both implementation work and higher-level partner conversations.
+
+## Vector Search and Semantic Crosswalk
+
+The repository now includes a vector-based semantic layer that complements the existing terminology services.
+
+This layer enables:
+
+* free-text semantic search across one or multiple terminologies
+* semantic crosswalk between different code systems
+* approximate concept matching across languages and models
+
+## What This Adds
+
+The vector layer extends the current capabilities with:
+
+* embedding-based similarity search using `sentence-transformers`
+* precomputed vectors stored in `Terminology_Vector.TermEmbedding`
+* HNSW indexing for fast nearest-neighbour retrieval
+* integration with the existing interoperability production model
+
+## API Endpoints
+
+The vector functionality is exposed under:
+
+```text
+/terminology/vector
+```
+
+## Semantic Search
+
+Search using natural language across one or more terminologies:
+
+```http
+GET /terminology/vector/search?q=neumonia adquirida en la comunidad
+```
+Example with filters
+
+```http
+GET /terminology/vector/search?q=fiebre tifoidea&systemUri=http://snomed.info/sct&systemUri=http://hl7.org/fhir/sid/icd-10-es&limit=10
+```
+Supported filters:
+
+- `systemUri`
+- `releaseId`
+- `lang`
+- `limit`
+
+## Crosswalk Between Terminologies
+
+Find semantically similar concepts across different systems.
+
+From a code:
+```http
+GET /terminology/vector/crosswalk?sourceSystemUri=http://snomed.info/sct&sourceReleaseId=SNOMED-ES-20250131&sourceCode=233604007&targetSystemUri=http://hl7.org/fhir/sid/icd-10-es
+```
+From free text:
+```http
+GET /terminology/vector/crosswalk?q=glucosa en sangre&targetSystemUri=http://loinc.org
+```
+
+## How it works
+
+The vectorization pipeline:
+
+- extracts text from terminology-specific tables:
+    - SNOMED → PreferredTerm
+    - LOINC → Display
+    - ICD/CIE → Code
+- generates embeddings using sentence-transformers
+- stores vectors explicitly using TO_VECTOR(..., DECIMAL)
+- performs similarity search using:
+```SQL
+VECTOR_DOT_PRODUCT(Embedding, query_vector)
+```
+
+## Design Principles
+
+The vector layer follows the same architecture as the rest of the repository:
+
+- REST API → Business Service → Business Operation → Utils
+- terminology-agnostic processing based on ReleaseId and metadata
+- no hardcoded system logic in vectorization
+- reuse of IRIS SQL and interoperability capabilities
+
+## Important Notes
+- results are based on semantic similarity, not curated mappings
+- this is not a replacement for official terminology mappings
+- quality depends on the embedding model used
+
+## Future Direction
+
+Planned extensions include:
+
+- hybrid keyword + vector search
+- FHIR integration ($translate, $lookup)
+- configurable similarity thresholds
+- support for multiple embedding models per use case
