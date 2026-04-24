@@ -1,4 +1,4 @@
-ARG IMAGE=containers.intersystems.com/intersystems/irishealth-community:2026.1
+ARG IMAGE=containers.intersystems.com/intersystems/irishealth:2026.1
 FROM $IMAGE
 
 USER root

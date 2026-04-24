@@ -1,4 +1,4 @@
-@baseUrl = http://localhost:52774/terminology/fhir/r4
+@baseUrl = http://localhost:8080/terminology/fhir/r4
 @username = superuser
 @password = SYS
 @systemUrl = http://loinc.org

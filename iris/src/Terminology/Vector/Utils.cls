@@ -203,7 +203,7 @@ ClassMethod RebuildByReleasePy(pReleaseId As %String, pType As %String, pLang As
 
 ClassMethod ClearAll() As %Status
 {
-    Set sql = "DELETE FROM Terminology_Vector.TermEmbedding"
+    Set sql = "DELETE %NOJOURN %NOLOCK FROM Terminology_Vector.TermEmbedding"
     Set params = "[]"
     return ##class(Terminology.Core.SqlUtils).ExecuteNonQuery(sql, params)
 }
@@ -218,7 +218,7 @@ ClassMethod ClearByRelease(pReleaseId As %String) As %Status [ Language = python
 
         params_json = json.dumps([system_uri, pReleaseId], ensure_ascii=False)
         sc = iris.cls("Terminology.Core.SqlUtils").ExecuteNonQuery(
-            "DELETE FROM Terminology_Vector.TermEmbedding WHERE SystemUri = ? AND ReleaseId = ?",
+            "DELETE %NOJOURN %NOLOCK FROM Terminology_Vector.TermEmbedding WHERE SystemUri = ? AND ReleaseId = ?",
             params_json
         )
         return sc
@@ -299,16 +299,18 @@ ClassMethod EncodeText(pText As %String, pModelName As %String = "FremyCompany/B
     return str(embedding.tolist())
 }
 
-ClassMethod SearchSimilarMulti(pText As %String, pSystemUris As %DynamicArray = "", pReleaseIds As %DynamicArray = "", pLang As %String = "", pTop As %Integer = 10, pModelName As %String = "FremyCompany/BioLORD-2023-M") As %DynamicArray
+ClassMethod SearchSimilarMulti(pText As %String, pSystemUris As %DynamicArray = "", pReleaseIds As %DynamicArray = "", pLang As %String = "", pLimit As %Integer = 10, pModelName As %String = "FremyCompany/BioLORD-2023-M") As Terminology.Vector.DTO.SearchResult
 {
-    Set result = []
+    Set result = ##class(Terminology.Vector.DTO.SearchResult).%New()
+    Set result.Items = ##class(%ListOfObjects).%New()
 
     Try {
         If $ZSTRIP($Get(pText),"<>W")="" {
+            Set result.Count = 0
             return result
         }
 
-        Set top = $Select(pTop>0:pTop,1:10)
+        Set limit = $Select(pLimit>0:pLimit,1:10)
         Set vector = ..EncodeText(pText, pModelName)
 
         Set sql = "SELECT TOP ? "_
@@ -317,7 +319,7 @@ ClassMethod SearchSimilarMulti(pText As %String, pSystemUris As %DynamicArray = 
                   "FROM Terminology_Vector.TermEmbedding "_
                   "WHERE 1=1 "
 
-        Set tArgs($I(tArgs)) = top
+        Set tArgs($I(tArgs)) = limit
         Set tArgs($I(tArgs)) = vector
 
         If $IsObject(pSystemUris), (pSystemUris.%Size()>0) {
@@ -342,25 +344,29 @@ ClassMethod SearchSimilarMulti(pText As %String, pSystemUris As %DynamicArray = 
         Set rs = stmt.%Execute(tArgs...)
 
         While rs.%Next() {
-            Set item = {}
-            Set item.systemUri = rs.%Get("SystemUri")
-            Set item.releaseId = rs.%Get("ReleaseId")
-            Set item.code = rs.%Get("Code")
-            Set item.lang = rs.%Get("Lang")
-            Set item.text = rs.%Get("Text")
-            Set item.model = rs.%Get("Model")
-            Set item.score = rs.%Get("Score")
-            Do result.%Push(item)
+            Set item = ##class(Terminology.Vector.DTO.SearchItem).%New()
+            Set item.SystemUri = rs.%Get("SystemUri")
+            Set item.ReleaseId = rs.%Get("ReleaseId")
+            Set item.Code = rs.%Get("Code")
+            Set item.Lang = rs.%Get("Lang")
+            Set item.Text = rs.%Get("Text")
+            Set item.Model = rs.%Get("Model")
+            Set item.Score = rs.%Get("Score")
+            Do result.Items.Insert(item)
         }
+
+        Set result.Count = result.Items.Count()
     } Catch ex {
+        Set result.Count = 0
     }
 
     return result
 }
 
-ClassMethod CrosswalkSimilar(pText As %String = "", pSourceSystemUri As %String = "", pSourceCode As %String = "", pSourceReleaseId As %String = "", pTargetSystemUris As %DynamicArray = "", pTargetReleaseIds As %DynamicArray = "", pLang As %String = "", pTop As %Integer = 10, pModelName As %String = "FremyCompany/BioLORD-2023-M") As %DynamicArray
+ClassMethod CrosswalkSimilar(pText As %String = "", pSourceSystemUri As %String = "", pSourceCode As %String = "", pSourceReleaseId As %String = "", pTargetSystemUris As %DynamicArray = "", pTargetReleaseIds As %DynamicArray = "", pLang As %String = "", pLimit As %Integer = 10, pModelName As %String = "FremyCompany/BioLORD-2023-M") As Terminology.Vector.DTO.CrosswalkResult
 {
-    Set result = []
+    Set result = ##class(Terminology.Vector.DTO.CrosswalkResult).%New()
+    Set result.Items = ##class(%ListOfObjects).%New()
 
     Try {
         Set searchText = $ZSTRIP($Get(pText),"<>W")
@@ -370,10 +376,11 @@ ClassMethod CrosswalkSimilar(pText As %String = "", pSourceSystemUri As %String 
         }
 
         If searchText="" {
+            Set result.Count = 0
             return result
         }
 
-        Set top = $Select(pTop>0:pTop,1:10)
+        Set limit = $Select(pLimit>0:pLimit,1:10)
         Set vector = ..EncodeText(searchText, pModelName)
 
         Set sql = "SELECT TOP ? "_
@@ -382,7 +389,7 @@ ClassMethod CrosswalkSimilar(pText As %String = "", pSourceSystemUri As %String 
                   "FROM Terminology_Vector.TermEmbedding "_
                   "WHERE 1=1 "
 
-        Set tArgs($I(tArgs)) = top
+        Set tArgs($I(tArgs)) = limit
         Set tArgs($I(tArgs)) = vector
 
         If $IsObject(pTargetSystemUris), (pTargetSystemUris.%Size()>0) {
@@ -423,18 +430,21 @@ ClassMethod CrosswalkSimilar(pText As %String = "", pSourceSystemUri As %String 
         Set rs = stmt.%Execute(tArgs...)
 
         While rs.%Next() {
-            Set item = {}
-            Set item.sourceText = searchText
-            Set item.systemUri = rs.%Get("SystemUri")
-            Set item.releaseId = rs.%Get("ReleaseId")
-            Set item.code = rs.%Get("Code")
-            Set item.lang = rs.%Get("Lang")
-            Set item.text = rs.%Get("Text")
-            Set item.model = rs.%Get("Model")
-            Set item.score = rs.%Get("Score")
-            Do result.%Push(item)
+            Set item = ##class(Terminology.Vector.DTO.CrosswalkItem).%New()
+            Set item.SourceText = searchText
+            Set item.SystemUri = rs.%Get("SystemUri")
+            Set item.ReleaseId = rs.%Get("ReleaseId")
+            Set item.Code = rs.%Get("Code")
+            Set item.Lang = rs.%Get("Lang")
+            Set item.Text = rs.%Get("Text")
+            Set item.Model = rs.%Get("Model")
+            Set item.Score = rs.%Get("Score")
+            Do result.Items.Insert(item)
         }
+
+        Set result.Count = result.Items.Count()
     } Catch ex {
+        Set result.Count = 0
     }
 
     return result
@@ -470,7 +480,7 @@ ClassMethod GetTextByIdentity(pSystemUri As %String, pReleaseId As %String, pCod
     } Catch ex {
     }
 
-    return text
+    Quit text
 }
 
 ClassMethod BuildPlaceholders(pCount As %Integer) As %String [ Private ]
@@ -484,20 +494,20 @@ ClassMethod BuildPlaceholders(pCount As %Integer) As %String [ Private ]
         Set placeholders = placeholders_"?"
     }
 
-    return placeholders
+    Quit placeholders
 }
 
 ClassMethod AppendDynamicArrayArgs(ByRef pArgs, pArray As %DynamicArray) As %Status [ Private ]
 {
     If '$IsObject(pArray) {
-        return $$$OK
+        Quit $$$OK
     }
 
     For i=0:1:(pArray.%Size()-1) {
         Set pArgs($I(pArgs)) = pArray.%Get(i)
     }
 
-    return $$$OK
+    Quit $$$OK
 }
 
 }

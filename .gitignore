@@ -4,3 +4,4 @@ iris/shared/resources/*.zip
 iris/shared/model
 ui/node_modules
 ui/dist
+webgateway/shared/durable

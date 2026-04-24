@@ -1,4 +1,4 @@
-@baseUrl = http://localhost:52774/terminology/loinc
+@baseUrl = http://localhost:8080/terminology/loinc
 @releaseId = 2.82
 @loincNum = 718-7
 @loincNum2 = LP392452-1

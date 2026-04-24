@@ -1,4 +1,4 @@
-@baseUrl = http://localhost:52774/terminology/snomed
+@baseUrl = http://localhost:8080/terminology/snomed
 @rootConceptId = 138875005
 @clinicalFindingId = 404684003
 @diseaseId = 64572001

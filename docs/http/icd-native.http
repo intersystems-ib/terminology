@@ -1,4 +1,4 @@
-@baseUrl = http://localhost:52774/terminology/icd
+@baseUrl = http://localhost:8080/terminology/icd
 @releaseId = ICD-10-ES 2026
 @version = 10
 @codeType = DIAGNOSIS
