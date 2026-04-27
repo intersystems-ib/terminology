@@ -5,3 +5,6 @@ iris/shared/model
 ui/node_modules
 ui/dist
 webgateway/shared/durable
+iris/.vscode/settings.json
+iris/shared/iris.key
+iris/shared/logfile.log
