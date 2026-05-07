@@ -1,8 +1,6 @@
 Class Terminology.Vector.TermEmbedding Extends %Persistent [ DdlAllowed ]
 {
 
-Parameter SQLTableName = "VectorTermEmbedding";
-
 Property ReleaseId As %String(MAXLEN = 64) [ Required ];
 
 Property SystemUri As %String(MAXLEN = 200) [ Required ];

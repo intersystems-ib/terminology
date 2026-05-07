@@ -21,7 +21,9 @@ Property BuildComponentBySystemHierarchy As %Boolean [ InitialExpression = 1 ];
 
 Property BuildGroupHierarchy As %Boolean [ InitialExpression = 1 ];
 
-Parameter SETTINGS = "TempDirectory,ClearBeforeLoad,BuildDisplay,BaseDisplayLang,DisplayLang,LinguisticVariantPrefix,BuildHierarchy,BuildComponentBySystemHierarchy,BuildGroupHierarchy";
+Property GenerateVectors As %Boolean [ InitialExpression = 0 ];
+
+Parameter SETTINGS = "TempDirectory,ClearBeforeLoad,BuildDisplay,BaseDisplayLang,DisplayLang,LinguisticVariantPrefix,BuildHierarchy,BuildComponentBySystemHierarchy,BuildGroupHierarchy,GenerateVectors";
 
 Method OnRequest(pRequest As Terminology.Production.Msg.LoincLoadRequest, Output pResponse As Terminology.Production.Msg.LoincLoadResponse) As %Status
 {
@@ -91,6 +93,29 @@ Method OnRequest(pRequest As Terminology.Production.Msg.LoincLoadRequest, Output
 
             If $$$ISERR(tSC) {
                 Set pResponse.Message = "LOINC imported but BuilderHierarchy failed: "_$System.Status.GetOneErrorText(tSC)
+                Return tSC
+            }
+        }
+
+        If ..GenerateVectors {
+            Do ##class(Ens.Util.Log).LogInfo(
+                "Terminology.Production.BP.LoincLoad",
+                "OnRequest",
+                "Starting LOINC vector generation. ReleaseId="_pRequest.ReleaseId
+            )
+
+            Set tSC = ##class(Terminology.Vector.Utils).RebuildByRelease(
+                pRequest.ReleaseId,
+                "LOINC",
+                ..DisplayLang,
+                ,
+                ,
+                ,
+                "FremyCompany/BioLORD-2023-M"
+            )
+
+            If $$$ISERR(tSC) {
+                Set pResponse.Message = "LOINC imported but vector generation failed: "_$System.Status.GetOneErrorText(tSC)
                 Return tSC
             }
         }
@@ -171,6 +196,9 @@ Storage Default
 </Value>
 <Value name="9">
 <Value>BaseDisplayLang</Value>
+</Value>
+<Value name="10">
+<Value>GenerateVectors</Value>
 </Value>
 </Data>
 <DefaultData>LoincLoadDefaultData</DefaultData>

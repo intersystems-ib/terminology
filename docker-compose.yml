@@ -13,4 +13,23 @@ services:
     - ./iris/shared:/iris-shared
     environment:
     - ISC_DATA_DIRECTORY=/iris-shared/durable
-    command: --check-caps false --ISCAgent false
+    command: --check-caps false --ISCAgent false --key /iris-shared/iris.key
+    
+  webgateway:
+    init: true
+    container_name: webgateway
+    build:
+      context: .
+      dockerfile: webgateway/Dockerfile
+    hostname: webgateway
+    ports:
+    - "8080:80"
+    - "8443:443"
+    environment:
+    - ISC_DATA_DIRECTORY=/webgateway-shared/durable
+    - ISC_CSP_CONF_FILE=/webgateway-shared/CSP.conf
+    - ISC_CSP_INI_FILE=/webgateway-shared/CSP.ini
+    volumes:
+    - ./webgateway/shared:/webgateway-shared
+    depends_on:
+    - iris  

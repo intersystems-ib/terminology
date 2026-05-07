@@ -21,9 +21,11 @@ Property IsaClosureView As %String(MAXLEN = 20) [ InitialExpression = "inferred"
 
 Property IsaTypeId As %String(MAXLEN = 20) [ InitialExpression = "116680003" ];
 
+Property GenerateVectors As %Boolean [ InitialExpression = 0 ];
+
 Property ClearBeforeLoad As %Boolean [ InitialExpression = 0 ];
 
-Parameter SETTINGS = "TempDirectory,SnomedFileSuffix,BuildPreferredTerm,PreferredTermLang,PreferredTermDialect,PreferredTermLanguageRefsetId,BuildIsaClosure,IsaClosureView,IsaTypeId,ClearBeforeLoad";
+Parameter SETTINGS = "TempDirectory,SnomedFileSuffix,BuildPreferredTerm,PreferredTermLang,PreferredTermDialect,PreferredTermLanguageRefsetId,BuildIsaClosure,IsaClosureView,IsaTypeId,GenerateVectors,ClearBeforeLoad";
 
 Method OnRequest(pRequest As Terminology.Production.Msg.SnomedRf2LoadRequest, Output pResponse As Terminology.Production.Msg.SnomedRf2LoadResponse) As %Status
 {
@@ -126,6 +128,14 @@ Method OnRequest(pRequest As Terminology.Production.Msg.SnomedRf2LoadRequest, Ou
             )
         }
 
+        If ..GenerateVectors {
+            Set tSC = ##class(Terminology.Vector.Utils).RebuildByRelease(pRequest.ReleaseId, "SNOMED", ..PreferredTermLang, ,pRequest.EffectiveDate)
+            If $$$ISERR(tSC) {
+                Set pResponse.Message = "RF2 importado pero generación de vectores falló: "_$System.Status.GetOneErrorText(tSC)
+                Return tSC
+            }
+        }
+
         Set pResponse.Message = "Carga RF2, generación de PreferredTerm y construcción de IsaClosure completadas correctamente"
         Return $$$OK
     } Catch ex {
@@ -207,6 +217,9 @@ Storage Default
 </Value>
 <Value name="10">
 <Value>ClearBeforeLoad</Value>
+</Value>
+<Value name="11">
+<Value>GenerateVectors</Value>
 </Value>
 </Data>
 <DefaultData>SnomedRf2LoadDefaultData</DefaultData>

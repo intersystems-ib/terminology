@@ -19,6 +19,10 @@ Parameter ICDTargetConfigName = "ICDRepositoryOperation";
 
 Parameter ICDGatewayConfigName = "ICDGatewayService";
 
+Parameter VectorTargetConfigName = "VectorSearchOperation";
+
+Parameter VectorGatewayConfigName = "VectorGatewayService";
+
 XData UrlMap
 {
 <Routes>
@@ -49,6 +53,8 @@ XData UrlMap
     <Route Url="/icd/codes/:code/ancestors" Method="GET" Call="ICDGetAncestors"/>
     <Route Url="/icd/families" Method="GET" Call="ICDGetFamilies"/>
     <Route Url="/icd/validate-code" Method="GET" Call="ICDValidateCode"/>
+    <Route Url="/vector/search" Method="GET" Call="VectorSearch"/>
+    <Route Url="/vector/crosswalk" Method="GET" Call="VectorCrosswalk"/>
 </Routes>
 }
 
@@ -63,7 +69,6 @@ ClassMethod AppLogin() As %Status
     Write obj.%ToJSON()
     Return $$$OK
 }
-
 
 ClassMethod SnomedSearch() As %Status
 {
@@ -834,6 +839,106 @@ ClassMethod ICDValidateCode() As %Status
 
         Set rsp = ""
         Set tSC = ..SendGatewayRequest(req, .rsp, ..#ICDGatewayConfigName, ..#ICDTargetConfigName)
+
+        If $$$ISERR(tSC) {
+            Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)
+            Return $$$OK
+        }
+
+        Do ..WriteDynamicResponse(rsp.Payload)
+        Return $$$OK
+    } Catch ex {
+        Do ..WriteError(ex.DisplayString(), 500)
+        Return $$$OK
+    }
+}
+
+ClassMethod VectorSearch() As %Status
+{
+    Set tSC = $$$OK
+
+    Try {
+        Set req = ##class(Terminology.Production.Msg.VectorSearchRequest).%New()
+
+        Set req.Query = $Get(%request.Data("q",1))
+        Set req.Lang = $Get(%request.Data("lang",1))
+        Set req.Limit = +$Get(%request.Data("limit",1))
+        If req.Limit=0 Set req.Limit=10
+
+        Set req.ModelName = $Get(%request.Data("model",1))
+        If req.ModelName="" Set req.ModelName="FremyCompany/BioLORD-2023-M"
+
+        Set req.SystemUris = ##class(%ListOfDataTypes).%New()
+        Set req.ReleaseIds = ##class(%ListOfDataTypes).%New()
+
+        Set i=""
+        For  {
+            Set i=$Order(%request.Data("systemUri",i))
+            Quit:i=""
+            Do req.SystemUris.Insert($Get(%request.Data("systemUri",i)))
+        }
+
+        Set i=""
+        For  {
+            Set i=$Order(%request.Data("releaseId",i))
+            Quit:i=""
+            Do req.ReleaseIds.Insert($Get(%request.Data("releaseId",i)))
+        }
+
+        Set rsp = ""
+        Set tSC = ..SendGatewayRequest(req, .rsp, ..#VectorGatewayConfigName, ..#VectorTargetConfigName)
+
+        If $$$ISERR(tSC) {
+            Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)
+            Return $$$OK
+        }
+
+        Do ..WriteDynamicResponse(rsp.Payload)
+        Return $$$OK
+    } Catch ex {
+        Do ..WriteError(ex.DisplayString(), 500)
+        Return $$$OK
+    }
+}
+
+ClassMethod VectorCrosswalk() As %Status
+{
+    Set tSC = $$$OK
+
+    Try {
+        Set req = ##class(Terminology.Production.Msg.VectorCrosswalkRequest).%New()
+
+        Set req.Query = $Get(%request.Data("q",1))
+        Set req.SourceSystemUri = $Get(%request.Data("sourceSystemUri",1))
+        Set req.SourceCode = $Get(%request.Data("sourceCode",1))
+        Set req.SourceReleaseId = $Get(%request.Data("sourceReleaseId",1))
+        Set req.Lang = $Get(%request.Data("lang",1))
+
+        Set req.Limit = +$Get(%request.Data("limit",1))
+        If req.Limit=0 Set req.Limit=10
+
+        Set req.ModelName = $Get(%request.Data("model",1))
+        If req.ModelName="" Set req.ModelName="FremyCompany/BioLORD-2023-M"
+
+        Set req.TargetSystemUris = ##class(%ListOfDataTypes).%New()
+        Set req.TargetReleaseIds = ##class(%ListOfDataTypes).%New()
+
+        Set i=""
+        For  {
+            Set i=$Order(%request.Data("targetSystemUri",i))
+            Quit:i=""
+            Do req.TargetSystemUris.Insert($Get(%request.Data("targetSystemUri",i)))
+        }
+
+        Set i=""
+        For  {
+            Set i=$Order(%request.Data("targetReleaseId",i))
+            Quit:i=""
+            Do req.TargetReleaseIds.Insert($Get(%request.Data("targetReleaseId",i)))
+        }
+
+        Set rsp = ""
+        Set tSC = ..SendGatewayRequest(req, .rsp, ..#VectorGatewayConfigName, ..#VectorTargetConfigName)
 
         If $$$ISERR(tSC) {
             Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)

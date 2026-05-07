@@ -1,0 +1,101 @@
+@baseUrl = http://localhost:8080/terminology/vector
+@username = superuser
+@password = SYS
+
+@model = FremyCompany/BioLORD-2023-M
+
+@snomedSystem = http://snomed.info/sct
+@loincSystem = http://loinc.org
+@icdSystem = http://id.who.int/icd/release/10
+
+@snomedRelease = SNOMED CT version 20260101
+@loincRelease = 2.82
+@icdRelease = ICD-10-ES 2026
+
+@sourceSnomedCode = 233604007
+@sourceIcdCode = A01.00
+
+### Vector search - free text on all terminologies
+GET {{baseUrl}}/search?q=neumonia adquirida en la comunidad&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Vector search - SNOMED only
+GET {{baseUrl}}/search?q=diabetes mellitus&systemUri={{snomedSystem}}&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Vector search - LOINC only
+GET {{baseUrl}}/search?q=glucosa en sangre&systemUri={{loincSystem}}&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Vector search - ICD only
+GET {{baseUrl}}/search?q=fiebre tifoidea&systemUri={{icdSystem}}&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Vector search - SNOMED + ICD
+GET {{baseUrl}}/search?q=fiebre tifoidea&systemUri={{snomedSystem}}&systemUri={{icdSystem}}&limit=15&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Vector search - filter by release
+GET {{baseUrl}}/search?q=neumonia&releaseId={{snomedRelease}}&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Vector search - filter by multiple releases
+GET {{baseUrl}}/search?q=hemoglobina&releaseId={{snomedRelease}}&releaseId={{loincRelease}}&limit=15&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Vector search - filter by language
+GET {{baseUrl}}/search?q=insuficiencia cardiaca&lang=es&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Vector search - filter by system + release + language
+GET {{baseUrl}}/search?q=glucosa en sangre&systemUri={{loincSystem}}&releaseId={{loincRelease}}&lang=es&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Crosswalk - free text to SNOMED + ICD
+GET {{baseUrl}}/crosswalk?q=neumonia adquirida en la comunidad&targetSystemUri={{snomedSystem}}&targetSystemUri={{icdSystem}}&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Crosswalk - free text to LOINC
+GET {{baseUrl}}/crosswalk?q=glucosa en sangre&targetSystemUri={{loincSystem}}&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Crosswalk - SNOMED code to ICD
+GET {{baseUrl}}/crosswalk?sourceSystemUri={{snomedSystem}}&sourceReleaseId={{snomedRelease}}&sourceCode={{sourceSnomedCode}}&targetSystemUri={{icdSystem}}&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Crosswalk - SNOMED code to LOINC + ICD
+GET {{baseUrl}}/crosswalk?sourceSystemUri={{snomedSystem}}&sourceReleaseId={{snomedRelease}}&sourceCode={{sourceSnomedCode}}&targetSystemUri={{loincSystem}}&targetSystemUri={{icdSystem}}&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Crosswalk - ICD code to SNOMED
+GET {{baseUrl}}/crosswalk?sourceSystemUri={{icdSystem}}&sourceReleaseId={{icdRelease}}&sourceCode={{sourceIcdCode}}&targetSystemUri={{snomedSystem}}&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Crosswalk - ICD code to SNOMED filtered by target release
+GET {{baseUrl}}/crosswalk?sourceSystemUri={{icdSystem}}&sourceReleaseId={{icdRelease}}&sourceCode={{sourceIcdCode}}&targetSystemUri={{snomedSystem}}&targetReleaseId={{snomedRelease}}&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Crosswalk - free text filtered by language
+GET {{baseUrl}}/crosswalk?q=fractura de femur&targetSystemUri={{snomedSystem}}&targetSystemUri={{icdSystem}}&lang=es&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
+
+### Crosswalk - free text filtered by target release
+GET {{baseUrl}}/crosswalk?q=fiebre tifoidea&targetSystemUri={{icdSystem}}&targetReleaseId={{icdRelease}}&limit=10&model={{model}}
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}

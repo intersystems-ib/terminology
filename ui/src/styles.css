@@ -650,3 +650,57 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+.textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(27, 64, 75, 0.14);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+  resize: vertical;
+  min-height: 96px;
+}
+
+.textarea:focus {
+  outline: 2px solid rgba(37, 99, 235, 0.22);
+  border-color: rgba(37, 99, 235, 0.28);
+}
+
+.chip-button {
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  cursor: pointer;
+}
+
+.chip-button-active {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+}
+
+.vector-result-list {
+  display: grid;
+  gap: 14px;
+}
+
+.vector-result-card {
+  display: grid;
+  gap: 14px;
+  border-radius: 20px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--border);
+}
+
+.vector-score {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  overflow: hidden;
+}
+
+.vector-score div {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}

@@ -1,5 +1,5 @@
 export type TerminologyDefinition = {
-  id: "snomed" | "loinc" | "icd";
+  id: "snomed" | "loinc" | "icd" | "vector";
   name: string;
   subtitle: string;
   releaseLabel: string;
@@ -15,7 +15,8 @@ export const TERMINOLOGIES: TerminologyDefinition[] = [
   {
     id: "snomed",
     name: "SNOMED CT",
-    subtitle: "Clinical concepts, hierarchy navigation, refsets and FHIR terminology operations.",
+    subtitle:
+      "Clinical concepts, hierarchy navigation, refsets and FHIR terminology operations.",
     releaseLabel: "SNOMED CT version 20260101",
     apiSupportLabel: "FHIR + Native",
     actions: ["Search", "Lookup", "Hierarchy", "Validate", "FHIR"],
@@ -24,7 +25,8 @@ export const TERMINOLOGIES: TerminologyDefinition[] = [
   {
     id: "loinc",
     name: "LOINC",
-    subtitle: "Lab and clinical terminology with parts, hierarchy exploration and ValueSet demos.",
+    subtitle:
+      "Lab and clinical terminology with parts, hierarchy exploration and ValueSet demos.",
     releaseLabel: "LOINC 2.82",
     apiSupportLabel: "FHIR + Native",
     actions: ["Search", "Lookup", "Parts", "Validate", "FHIR"],
@@ -33,10 +35,21 @@ export const TERMINOLOGIES: TerminologyDefinition[] = [
   {
     id: "icd",
     name: "ICD",
-    subtitle: "Diagnosis and procedure code navigation, validation and family-backed ValueSets.",
+    subtitle:
+      "Diagnosis and procedure code navigation, validation and family-backed ValueSets.",
     releaseLabel: "ICD-10-ES 2026",
     apiSupportLabel: "FHIR + Native",
     actions: ["Search", "Lookup", "Hierarchy", "Validate", "FHIR"],
     route: "/terminologies/icd"
+  },
+  {
+    id: "vector",
+    name: "Vector Search",
+    subtitle:
+      "Semantic search and crosswalk suggestions across SNOMED CT, LOINC and ICD.",
+    releaseLabel: "Precomputed embeddings",
+    apiSupportLabel: "Native",
+    actions: ["Free-text search", "Crosswalk", "Similarity", "Model"],
+    route: "/terminologies/vector"
   }
 ];

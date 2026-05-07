@@ -11,6 +11,8 @@ Property DefaultDialect As %String(MAXLEN = 20);
 
 Property Notes As %String(MAXLEN = 32000);
 
+Property Type As %String(MAXLEN = 10);
+
 Index PK On SystemUri [ Unique ];
 
 Storage Default
@@ -33,6 +35,9 @@ Storage Default
 </Value>
 <Value name="6">
 <Value>Notes</Value>
+</Value>
+<Value name="7">
+<Value>Type</Value>
 </Value>
 </Data>
 <DataLocation>^Terminology.Core.CodeSystemD</DataLocation>
