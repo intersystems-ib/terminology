@@ -1,8 +1,8 @@
 services:
-  # iris
-  iris:
+  # iris-terminology-server
+  iris-terminology-server:
     init: true
-    container_name: iris
+    container_name: iris-terminology-server
     build:
       context: .
       dockerfile: iris/Dockerfile
