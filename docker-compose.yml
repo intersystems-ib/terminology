@@ -32,4 +32,4 @@ services:
     volumes:
     - ./webgateway/shared:/webgateway-shared
     depends_on:
-    - iris  
+    - iris-terminology-server  
