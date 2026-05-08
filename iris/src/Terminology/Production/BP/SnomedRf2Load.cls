@@ -9,6 +9,8 @@ Property SnomedFileSuffix As %String(MAXLEN = 500) [ InitialExpression = "Spanis
 
 Property BuildPreferredTerm As %Boolean [ InitialExpression = 1 ];
 
+Property BuildICD10Map As %Boolean [ InitialExpression = 1 ];
+
 Property PreferredTermLang As %String(MAXLEN = 10) [ InitialExpression = "es" ];
 
 Property PreferredTermDialect As %String(MAXLEN = 20) [ InitialExpression = "es-ES" ];
@@ -25,7 +27,7 @@ Property GenerateVectors As %Boolean [ InitialExpression = 0 ];
 
 Property ClearBeforeLoad As %Boolean [ InitialExpression = 0 ];
 
-Parameter SETTINGS = "TempDirectory,SnomedFileSuffix,BuildPreferredTerm,PreferredTermLang,PreferredTermDialect,PreferredTermLanguageRefsetId,BuildIsaClosure,IsaClosureView,IsaTypeId,GenerateVectors,ClearBeforeLoad";
+Parameter SETTINGS = "TempDirectory,SnomedFileSuffix,BuildICD10Map,BuildPreferredTerm,PreferredTermLang,PreferredTermDialect,PreferredTermLanguageRefsetId,BuildIsaClosure,IsaClosureView,IsaTypeId,GenerateVectors,ClearBeforeLoad";
 
 Method OnRequest(pRequest As Terminology.Production.Msg.SnomedRf2LoadRequest, Output pResponse As Terminology.Production.Msg.SnomedRf2LoadResponse) As %Status
 {
@@ -71,6 +73,29 @@ Method OnRequest(pRequest As Terminology.Production.Msg.SnomedRf2LoadRequest, Ou
             "OnRequest",
             "Importación RF2 completada. ReleaseId="_pRequest.ReleaseId
         )
+
+        If ..BuildICD10Map {
+            Do ##class(Ens.Util.Log).LogInfo(
+                "Terminology.Production.BP.SnomedRf2Load",
+                "OnRequest",
+                "Inicio BuilderSnomedToIcd10. ReleaseId="_pRequest.ReleaseId
+            )
+
+            Set tSC = ##class(Terminology.Snomed.Utils.BuilderSnomedToIcd10).Build(
+                rf2Dir,
+                pRequest.ReleaseId,
+                pRequest.SetActive
+            )
+            If $$$ISERR(tSC) {
+                Set pResponse.Message = "RF2 importado pero BuilderSnomedToIcd10 falló: "_$System.Status.GetOneErrorText(tSC)
+                Return tSC
+            }
+            Do ##class(Ens.Util.Log).LogInfo(
+                "Terminology.Production.BP.SnomedRf2Load",
+                "OnRequest",
+                "BuilderSnomedToIcd10 completado. ReleaseId="_pRequest.ReleaseId
+            )
+        }
 
         If ..BuildPreferredTerm {
             If ..PreferredTermLanguageRefsetId = "" {
@@ -220,6 +245,9 @@ Storage Default
 </Value>
 <Value name="11">
 <Value>GenerateVectors</Value>
+</Value>
+<Value name="12">
+<Value>BuildICD10Map</Value>
 </Value>
 </Data>
 <DefaultData>SnomedRf2LoadDefaultData</DefaultData>
