@@ -79,6 +79,11 @@ Method GetRefsetMembers(pRefsetId As %String = "", pReleaseId As %String = "", p
     Return ..GetRepository().GetRefsetMembers(pRefsetId, pReleaseId, pLang, pDialect, pLimit, pOffset, .pResult)
 }
 
+Method GetIcd10Mappings(pReleaseId As %String = "", pConceptId As %String = "", pLimit As %Integer = 50, pOffset As %Integer = 0, Output pResult As Terminology.Snomed.DTO.Icd10MappingResult) As %Status
+{
+    Return ..GetRepository().GetIcd10Mappings(pReleaseId, pConceptId, pLimit, pOffset, .pResult )
+}
+
 /// Returns minimal neutral value set metadata rows over SNOMED reference sets.
 Method SearchValueSets(pUrl As %String = "", pId As %String = "", pName As %String = "", pVersion As %String = "", Output pResult As Terminology.Core.DTO.ValueSetListResult) As %Status
 {

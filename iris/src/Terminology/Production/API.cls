@@ -37,6 +37,7 @@ XData UrlMap
     <Route Url="/snomed/refsets" Method="GET" Call="SnomedGetRefsets"/>
     <Route Url="/snomed/refsets/:refsetId/members" Method="GET" Call="SnomedGetRefsetMembers"/>
     <Route Url="/snomed/validate-code" Method="GET" Call="SnomedValidateCode"/>
+    <Route Url="/snomed/concepts/:conceptId/icd10-mappings" Method="GET" Call="SnomedGetIcd10Mappings"/>
     <Route Url="/loinc/search" Method="GET" Call="LoincSearch"/>
     <Route Url="/loinc/codes/:loincNum" Method="GET" Call="LoincGetCode"/>
     <Route Url="/loinc/codes/:loincNum/displays" Method="GET" Call="LoincGetDisplays"/>
@@ -353,6 +354,37 @@ ClassMethod SnomedValidateCode() As %Status
 
         Set rsp = ""
         Set tSC = ..SendGatewayRequest(req, .rsp, ..#SnomedGatewayConfigName, ..#SnomedTargetConfigName)
+        If $$$ISERR(tSC) {
+            Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)
+            Return $$$OK
+        }
+
+        Do ..WriteDynamicResponse(rsp.Payload)
+        Return $$$OK
+    } Catch ex {
+        Do ..WriteError(ex.DisplayString(), 500)
+        Return $$$OK
+    }
+}
+
+ClassMethod SnomedGetIcd10Mappings(conceptId As %String) As %Status
+{
+    Set tSC = $$$OK
+
+    Try {
+        Set req = ##class(Terminology.Production.Msg.SnomedGetIcd10MappingsRequest).%New()
+
+        Set req.ConceptId = conceptId
+        Set req.ReleaseId = $Get(%request.Data("releaseId",1))
+
+        Set req.Limit = +$Get(%request.Data("limit",1))
+        If req.Limit=0 Set req.Limit=50
+
+        Set req.Offset = +$Get(%request.Data("offset",1))
+
+        Set rsp = ""
+        Set tSC = ..SendGatewayRequest(req, .rsp, ..#SnomedGatewayConfigName, ..#SnomedTargetConfigName)
+
         If $$$ISERR(tSC) {
             Do ..WriteError($System.Status.GetOneErrorText(tSC), 500)
             Return $$$OK

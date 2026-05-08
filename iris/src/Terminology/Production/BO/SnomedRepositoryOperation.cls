@@ -36,6 +36,9 @@ XData MessageMap
     <MapItem MessageType="Terminology.Production.Msg.SnomedValidateCodeRequest">
         <Method>HandleValidateCode</Method>
     </MapItem>
+    <MapItem MessageType="Terminology.Production.Msg.SnomedGetIcd10MappingsRequest">
+        <Method>HandleGetIcd10Mappings</Method>
+    </MapItem>
 </MapItems>
 }
 
@@ -306,6 +309,27 @@ Method HandleValidateCode(pRequest As Terminology.Production.Msg.SnomedValidateC
             "snomed",
             pRequest.ReleaseId,
             pRequest.Code,
+            .payload
+        )
+        $$$ThrowOnError(tSC)
+
+        Set pResponse.Payload = payload
+        Return tSC
+    } Catch ex {
+        Return $$$ERROR($$$GeneralError, ex.DisplayString())
+    }
+}
+
+Method HandleGetIcd10Mappings(pRequest As Terminology.Production.Msg.SnomedGetIcd10MappingsRequest, Output pResponse As Terminology.Production.Msg.SnomedGetIcd10MappingsResponse) As %Status
+{
+    Set pResponse = ##class(Terminology.Production.Msg.SnomedGetIcd10MappingsResponse).%New()
+
+    Try {
+        Set tSC = ..GetSnomedAdapter().GetIcd10Mappings(
+            pRequest.ReleaseId,
+            pRequest.ConceptId,
+            pRequest.Limit,
+            pRequest.Offset,
             .payload
         )
         $$$ThrowOnError(tSC)

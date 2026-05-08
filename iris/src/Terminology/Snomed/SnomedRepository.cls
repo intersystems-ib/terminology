@@ -690,6 +690,69 @@ Method ClosureRelationExists(pReleaseId As %String, pView As %String, pAncestorI
     }
 }
 
+Method GetIcd10Mappings(pReleaseId As %String = "", pConceptId As %String = "", pLimit As %Integer = 50, pOffset As %Integer = 0, Output pResult As Terminology.Snomed.DTO.Icd10MappingResult) As %Status
+{
+    Set pResult = ##class(Terminology.Snomed.DTO.Icd10MappingResult).%New()
+    Set pResult.Items = ##class(%ListOfObjects).%New()
+
+    Try {
+        Set whereList = ""
+
+        Set sql = "SELECT SourceConceptId, TargetCode, Equivalence, Rule "_
+                  "FROM Terminology_Mapping.SnomedToIcd10 "
+
+        If pReleaseId'="" {
+            Set whereList = whereList_$ListBuild("ReleaseId = ?")
+            Set tArgs($I(tArgs)) = pReleaseId
+        }
+
+        If pConceptId'="" {
+            Set whereList = whereList_$ListBuild("SourceConceptId = ?")
+            Set tArgs($I(tArgs)) = pConceptId
+        }
+
+        If whereList'="" {
+            Set query = sql_"WHERE "_$ListToString(whereList," AND ")_" ORDER BY TargetCode"
+        } Else {
+            Set query = sql_"ORDER BY TargetCode"
+        }
+
+        Set stmt = ##class(%SQL.Statement).%New()
+        $$$ThrowOnError(stmt.%Prepare(query))
+        Set rset = stmt.%Execute(tArgs...)
+
+        Set skipped = 0
+        Set added = 0
+        Set limit = $Select(pLimit>0:pLimit,1:50)
+        Set offset = $Select(pOffset>0:pOffset,1:0)
+
+        While rset.%Next() {
+            If skipped < offset {
+                Set skipped = skipped + 1
+                Continue
+            }
+
+            If added >= limit {
+                Continue
+            }
+
+            Set item = ##class(Terminology.Snomed.DTO.Icd10MappingItem).%New()
+            Set item.SourceConceptId = rset.%Get("SourceConceptId")
+            Set item.TargetCode = rset.%Get("TargetCode")
+            Set item.Equivalence = rset.%Get("Equivalence")
+            Set item.Rule = rset.%Get("Rule")
+
+            Do pResult.Items.Insert(item)
+            Set added = added + 1
+        }
+
+        Set pResult.Count = pResult.Items.Count()
+        Return $$$OK
+    } Catch ex {
+        Return $$$ERROR($$$GeneralError, ex.DisplayString())
+    }
+}
+
 Method AddArgument(ByRef pArgs, ByRef pArgCount As %Integer, pValue As %String = "") As %Status [ Private ]
 {
     Set pArgCount = pArgCount + 1

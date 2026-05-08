@@ -69,3 +69,8 @@ Authorization: Basic {{username}}:{{password}}
 GET {{baseUrl}}/validate-code?releaseId={{releaseId}}&code={{myocardialInfarctionId}}
 Accept: application/json
 Authorization: Basic {{username}}:{{password}}
+
+### Get ICD-10 mappings for a SNOMED CT concept
+GET {{baseUrl}}/concepts/{{myocardialInfarctionId}}/icd10-mappings?releaseId={{releaseId}}&limit=20
+Accept: application/json
+Authorization: Basic {{username}}:{{password}}
