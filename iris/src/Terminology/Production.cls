@@ -30,7 +30,7 @@ XData ProductionDefinition
     <Setting Target="Host" Name="PreferredTermLang">en</Setting>
     <Setting Target="Host" Name="SnomedFileSuffix"></Setting>
     <Setting Target="Host" Name="ClearBeforeLoad">1</Setting>
-    <Setting Target="Host" Name="BuildICD10Map">0</Setting>
+    <Setting Target="Host" Name="BuildICD10Map">1</Setting>
   </Item>
   <Item Name="SnomedFileServiceBase" Category="" ClassName="Terminology.Production.BS.SnomedRf2FileService" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
     <Setting Target="Adapter" Name="FilePath">/iris-shared/in/snomed/base/</Setting>

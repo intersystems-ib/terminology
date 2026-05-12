@@ -154,6 +154,11 @@ Method OnRequest(pRequest As Terminology.Production.Msg.SnomedRf2LoadRequest, Ou
         }
 
         If ..GenerateVectors {
+            Do ##class(Ens.Util.Log).LogInfo(
+                "Terminology.Production.BP.SnomedRf2Load",
+                "OnRequest",
+                "Inicio RebuildByRelease para generación de vectores. ReleaseId="_pRequest.ReleaseId
+            )
             Set tSC = ##class(Terminology.Vector.Utils).RebuildByRelease(pRequest.ReleaseId, "SNOMED", ..PreferredTermLang, ,pRequest.EffectiveDate)
             If $$$ISERR(tSC) {
                 Set pResponse.Message = "RF2 importado pero generación de vectores falló: "_$System.Status.GetOneErrorText(tSC)
