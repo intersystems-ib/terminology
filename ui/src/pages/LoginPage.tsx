@@ -87,7 +87,7 @@ export function LoginPage() {
               <input
                 id="serverUrl"
                 name="serverUrl"
-                placeholder="http://localhost:52774"
+                placeholder="http://localhost:8080"
                 value={serverUrl}
                 onChange={(event) => setServerUrl(event.target.value)}
               />

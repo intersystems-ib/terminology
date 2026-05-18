@@ -172,7 +172,7 @@ http://localhost:5173
 Expected local terminology server URL:
 
 ```text
-http://localhost:52774
+http://localhost:8080
 ```
 
 ### Environment Configuration
@@ -182,7 +182,7 @@ The UI should use a small environment configuration file.
 Example:
 
 ```text
-VITE_API_BASE_URL=http://localhost:52774
+VITE_API_BASE_URL=http://localhost:8080
 ```
 
 This keeps the server location configurable without changing application code.
@@ -242,7 +242,7 @@ Fields:
 
 Example values:
 
-- `Server URL`: `http://localhost:52774`
+- `Server URL`: `http://localhost:8080`
 - `Username`: `superuser`
 - `Password`: `SYS`
 
@@ -270,7 +270,7 @@ Accept: application/json
 Example:
 
 ```text
-GET http://localhost:52774/terminology/auth/login
+GET http://localhost:8080/terminology/auth/login
 ```
 
 This is a good login check because:
@@ -515,7 +515,7 @@ Tabs inside the page can control the active action.
 Assume the server URL entered on login is:
 
 ```text
-http://localhost:52774
+http://localhost:8080
 ```
 
 Then the backend base URLs are:
@@ -523,15 +523,15 @@ Then the backend base URLs are:
 Native:
 
 ```text
-http://localhost:52774/terminology/snomed
-http://localhost:52774/terminology/loinc
-http://localhost:52774/terminology/icd
+http://localhost:8080/terminology/snomed
+http://localhost:8080/terminology/loinc
+http://localhost:8080/terminology/icd
 ```
 
 FHIR:
 
 ```text
-http://localhost:52774/terminology/fhir/r4
+http://localhost:8080/terminology/fhir/r4
 ```
 
 ## Example URLs by Terminology

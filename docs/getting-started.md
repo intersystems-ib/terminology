@@ -199,7 +199,7 @@ http://localhost:5173
 Use the local terminology server URL:
 
 ```text
-http://localhost:52774
+http://localhost:8080
 ```
 
 The login flow validates the supplied Basic auth credentials through:

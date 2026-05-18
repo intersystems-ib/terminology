@@ -65,7 +65,7 @@ The login screen expects the IRIS terminology server URL and a valid IRIS userna
 Default local server URL:
 
 ```text
-http://localhost:52774
+http://localhost:8080
 ```
 
 The UI validates credentials through:
